@@ -1,29 +1,27 @@
 #!/bin/bash
 
-# defconfig
-DEF_USER="eric"
-DEF_HOSTNAME="loki"
-DEF_KEYMAP="de"
-DEF_ROOTDEV="/dev/nvme0n1"
-DEF_DESKTOP="1" # { [1] = mate, [2] = kde, [3] = gnome, [4] = cinnamon, [5] = deepin }
+DIALOG="dialog --clear"
 
 # clean previous install attempts
 umount -R /mnt &> /dev/null || true
 cryptsetup luksClose /dev/mapper/* &> /dev/null || true
 
-# ask for user configuration
-echo -n -e "\e[31m->\e[0m Please enter your keymap [$DEF_KEYMAP]: "
-read KEYMAP
+# ask for user configurationa
+KEYMAP=$($DIALOG --title "Keymap" --inputbox "Please enter your keymap" 0 0 "" 3>&1 1>&2 2>&3)
 KEYMAP=${KEYMAP:-$DEF_KEYMAP}
 loadkeys $KEYMAP
 
-echo -n -e "\e[31m->\e[0m Please enter your username [$DEF_USER]: "
-read USERNAME
+USERNAME=$($DIALOG --title "Username" --inputbox "Please enter your username" 0 0 "" 3>&1 1>&2 2>&3)
 USERNAME=${USERNAME:-$DEF_USER}
 
-echo -n -e "\e[31m->\e[0m Please enter the target device [$DEF_ROOTDEV]: "
-read ROOTDEV
+HOSTNAME=$($DIALOG --title "Hostname" --inputbox "Please enter your hostname" 0 0 "" 3>&1 1>&2 2>&3)
+HOSTNAME=${HOSTNAME:-$DEF_HOSTNAME}
+
+ROOTDEV=$($DIALOG --title "Harddisk" --radiolist "Please select the target device" 0 0 0 \
+$(ls /dev/sd? /dev/mmcblk? /dev/nvme?n? -1 2> /dev/null | while read line; do
+echo "$line" "$line" on; done) 3>&1 1>&2 2>&3)
 ROOTDEV=${ROOTDEV:-$DEF_ROOTDEV}
+
 if grep "mmcblk" <<< $ROOTDEV &> /dev/null; then
   RDAPPEND=p
 fi
@@ -32,55 +30,54 @@ if grep "nvme" <<< $ROOTDEV &> /dev/null; then
   RDAPPEND=p
 fi
 
-echo -n -e "\e[31m->\e[0m Please enter your Hostname [loki]: "
-read HOSTNAME
-HOSTNAME=${HOSTNAME:-$DEF_HOSTNAME}
-
-echo -e "\e[31m->\e[0m Please select your Desktop [$DEF_DESKTOP]"
-echo -e "\t1. MATE"
-echo -e "\t2. KDE"
-echo -e "\t3. GNOME"
-echo -e "\t4. CINNAMON"
-echo -e "\t5. DEEPIN"
-read DESKTOP
-DESKTOP=${DESKTOP:-$DEF_DESKTOP}
-
-echo -n -e "\e[31m->\e[0m Wipe ${ROOTDEV}? (First install?) [n]: "
-read WIPE
-WIPE=${WIPE:-n}
-
-echo -n -e "\e[31m->\e[0m Install NVIDIA Hybrid Graphic Software? [y]: "
-read OPTIMUS
-OPTIMUS=${OPTIMUS:-y}
-
-echo -n -e "\e[31m->\e[0m Fix bad PCI board (RazerBlade2017)? [y]: "
-read FIX_PCI
-FIX_PCI=${FIX_PCI:-y}
-
-if [ "$FIX_PCI" = "y" ]; then
-  FIX_PCI="pci=noaer button.lid_init_state=open"
+if $DIALOG --title "UEFI" --yesno "Use UEFI Boot?" 0 0; then
+  UEFI=y
 else
-  FIX_PCI=""
+  UEFI=n
 fi
 
-echo -n -e "\e[31m->\e[0m Fix Display Rotation (GPD Win)? [n]: "
-read FIX_GPD
-FIX_GPD=${FIX_GPD:-n}
-
-if [ "$FIX_GPD" = "n" ]; then
-  FIX_PCI="$FIX_PCI"
+if $DIALOG --title "Reuse" --yesno "Do you want to reuse an existing installation?" 0 0; then
+  WIPE=n
 else
-  FIX_PCI="$FIX_PCI fbcon=rotate:1 dmi_product_name=GPD-WINI55"
+  WIPE=y
 fi
 
-echo -n -e "\e[31m->\e[0m Use UEFI? [y]: "
-read UEFI
-UEFI=${UEFI:-y}
+DESKTOP=$($DIALOG --title "Desktop" --radiolist "Please select your Desktop" 0 0 0 \
+  1 "MATE" on\
+  2 "KDE" off\
+  3 "GNOME" off\
+  4 "CINNAMON" off\
+  5 "DEEPIN" off 3>&1 1>&2 2>&3)
+
+
+TWEAKS=`$DIALOG --title "Tweaks" --checklist "Select Custom Tweaks" 0 0 4 \
+ OPTIMUS "Install NVIDIA Hybrid Graphic Drivers" on\
+ FIX_PCI "Fix bad PCI Events (RazerBlade2017)" on\
+ FIX_GPD "Fix Display Rotation (GPD Win)" off 3>&1 1>&2 2>&3`
+for item in $TWEAKS; do
+  if [ "$item" = "OPTIMUS" ]; then
+    OPTIMUS=y
+  elif [ "$item" = "FIX_PCI" ]; then
+    FIX_PCI="pci=noaer button.lid_init_state=open"
+  elif [ "$item" == "FIX_GPD" ]; then
+    FIX_PCI="$FIX_PCI fbcon=rotate:1 dmi_product_name=GPD-WINI55"
+  fi
+done
+
+while ! [ "$USERPW" = "$USERPW2" ] || [ -z "$USERPW" ]; do
+  USERPW=$($DIALOG --title "User Password" --passwordbox "Enter your user password" 0 0 3>&1 1>&2 2>&3)
+  USERPW2=$($DIALOG --title "User Password" --passwordbox "Repeat your user password" 0 0 3>&1 1>&2 2>&3)
+done
+
+while ! [ "$DISKPW" = "$DISKPW2" ] || [ -z "$DISKPW" ]; do
+  DISKPW=$($DIALOG --title "Disk Encryption" --passwordbox "Enter your disk encryption password" 0 0 3>&1 1>&2 2>&3)
+  DISKPW2=$($DIALOG --title "Disk Encryption" --passwordbox "Repeat your disk encryption password" 0 0 3>&1 1>&2 2>&3)
+done
 
 INSTALL_OPTIMUS="bumblebee mesa lib32-virtualgl nvidia lib32-nvidia-utils primus lib32-primus bbswitch"
 INSTALL_BASE="vim openssh wget htop ncdu screen zsh net-tools unp debootstrap unrar unzip p7zip rfkill bind-tools rsnapshot lxc php php-gd lua mariadb-clients libmariadbclient"
 
-INSTALL_DESKTOP="mpv youtube-dl git fuseiso atom chromium firefox vlc ffmpeg gimp blender owncloud-client wine wine-mono wine_gecko steam libreoffice ttf-liberation ttf-ubuntu-font-family ttf-droid ttf-dejavu ttf-freefont noto-fonts-emoji alsa-utils samba lib32-libpulse gst-plugins-ugly gst-plugins-bad gst-libav android-tools pulseaudio-zeroconf noto-fonts picard inkscape audacity pidgin virtualbox virtualbox-host-modules-arch"
+INSTALL_DESKTOP="mpv youtube-dl git fuseiso atom chromium firefox vlc ffmpeg gimp blender owncloud-client wine wine-mono wine_gecko steam libreoffice ttf-liberation ttf-ubuntu-font-family ttf-droid ttf-dejavu ttf-freefont noto-fonts-emoji alsa-utils samba lib32-libpulse gst-plugins-ugly gst-plugins-bad gst-libav android-tools pulseaudio-zeroconf noto-fonts picard inkscape audacity pidgin virtualbox virtualbox-host-modules-arch keepassx2"
 
 INSTALL_DESKTOP_GTK="easytag wireshark-gtk gtk-recordmydesktop openshot gcolor2 meld paprefs evolution"
 INSTALL_DESKTOP_QT="kid3 wireshark-qt qt-recordmydesktop"
@@ -119,46 +116,31 @@ case $DESKTOP in
   ;;
 esac
 
-echo
-echo "################################################################################"
-echo "                                  OVERVIEW"
-echo "################################################################################"
-echo
-echo " USERNAME: $USERNAME"
-echo " HOSTNAME: $HOSTNAME"
-echo " DEVICE: $ROOTDEV"
-echo
-echo " WIPE DISK: $WIPE"
-echo
-echo " DESKTOP: $DESKTOP"
-echo " DISPLAY-MANAGER: $DESKTOP_DM"
-echo
-echo " PACKAGES:"
-echo " $DESKTOP_APPS"
-echo " $DESKTOP_MISC"
-echo " $INSTALL_BASE"
-echo " $INSTALL_DESKTOP"
-echo " $INSTALL_OPTIMUS"
-echo
-echo "Hit Ctrl-C to abort, Return to continue ..."
-read
+cat > /tmp/install-summary.log << EOF
+Simple Arch Linux Installer
+===========================
 
-# ask for passwords
-USERPW="arch"
-while ! [ "$USERPW" = "$USERPW2" ]; do
-  echo -e "\e[33m::\e[0m Set password for '${USERNAME}'"
-  read -s USERPW
-  read -s -p "repeat: " USERPW2
-done
-echo OK
+Username: $USERNAME
+Hostname: $HOSTNAME
 
-DISKPW="arch"
-while ! [ "$DISKPW" = "$DISKPW2" ]; do
-  echo -e "\e[33m::\e[0m Set password for '${ROOTDEV}'"
-  read -s DISKPW
-  read -s -p "repeat: " DISKPW2
-done
-echo OK
+Device: $ROOTDEV
+Wipe: $WIPE
+
+Desktop: $DESKTOP
+Display Manager: $DESKTOP_DM
+
+Packages
+========
+
+$INSTALL_BASE
+$INSTALL_DESKTOP
+$DESKTOP_MISC
+$DESKTOP_APPS
+$INSTALL_OPTIMUS
+
+Hit Ctrl-C to abort, Return to continue ...
+EOF
+$DIALOG --title "Summary" --textbox /tmp/install-summary.log 0 0
 
 if [ "$WIPE" = "y" ]; then
   dd if=/dev/zero of=${ROOTDEV} bs=4M conv=fsync count=1
