@@ -1,26 +1,27 @@
 #!/bin/bash
 
-DIALOG="dialog --clear"
+function progress() {
+  echo $2 | dialog --title "Installation" --gauge "$1" 0 40 0
+}
 
 # clean previous install attempts
 umount -R /mnt &> /dev/null || true
 cryptsetup luksClose /dev/mapper/* &> /dev/null || true
 
-# ask for user configurationa
-KEYMAP=$($DIALOG --title "Keymap" --inputbox "Please enter your keymap" 0 0 "" 3>&1 1>&2 2>&3)
-KEYMAP=${KEYMAP:-$DEF_KEYMAP}
+KEYMAP=$(dialog --clear --title "Keymap" --inputbox "Please enter your keymap" 0 0 "" 3>&1 1>&2 2>&3)
+if test $? -eq 1; then exit 1; fi
 loadkeys $KEYMAP
 
-USERNAME=$($DIALOG --title "Username" --inputbox "Please enter your username" 0 0 "" 3>&1 1>&2 2>&3)
-USERNAME=${USERNAME:-$DEF_USER}
+USERNAME=$(dialog --clear --title "Username" --inputbox "Please enter your username" 0 0 "" 3>&1 1>&2 2>&3)
+if test $? -eq 1; then exit 1; fi
 
-HOSTNAME=$($DIALOG --title "Hostname" --inputbox "Please enter your hostname" 0 0 "" 3>&1 1>&2 2>&3)
-HOSTNAME=${HOSTNAME:-$DEF_HOSTNAME}
+HOSTNAME=$(dialog --clear --title "Hostname" --inputbox "Please enter your hostname" 0 0 "" 3>&1 1>&2 2>&3)
+if test $? -eq 1; then exit 1; fi
 
-ROOTDEV=$($DIALOG --title "Harddisk" --radiolist "Please select the target device" 0 0 0 \
+ROOTDEV=$(dialog --clear --title "Harddisk" --radiolist "Please select the target device" 0 0 0 \
 $(ls /dev/sd? /dev/mmcblk? /dev/nvme?n? -1 2> /dev/null | while read line; do
 echo "$line" "$line" on; done) 3>&1 1>&2 2>&3)
-ROOTDEV=${ROOTDEV:-$DEF_ROOTDEV}
+if test $? -eq 1; then exit 1; fi
 
 if grep "mmcblk" <<< $ROOTDEV &> /dev/null; then
   RDAPPEND=p
@@ -30,30 +31,32 @@ if grep "nvme" <<< $ROOTDEV &> /dev/null; then
   RDAPPEND=p
 fi
 
-if $DIALOG --title "UEFI" --yesno "Use UEFI Boot?" 0 0; then
+if dialog --clear --title "UEFI" --yesno "Use UEFI Boot?" 0 0 3>&1 1>&2 2>&3; then
   UEFI=y
 else
   UEFI=n
 fi
 
-if $DIALOG --title "Reuse" --yesno "Do you want to reuse an existing installation?" 0 0; then
+if dialog --clear --title "Reuse" --yesno "Do you want to reuse an existing installation?" 0 0 3>&1 1>&2 2>&3; then
   WIPE=n
 else
   WIPE=y
 fi
 
-DESKTOP=$($DIALOG --title "Desktop" --radiolist "Please select your Desktop" 0 0 0 \
+DESKTOP=$(dialog --clear --title "Desktop" --radiolist "Please select your Desktop" 0 0 0 \
   1 "MATE" on\
   2 "KDE" off\
   3 "GNOME" off\
   4 "CINNAMON" off\
   5 "DEEPIN" off 3>&1 1>&2 2>&3)
+if test $? -eq 1; then exit 1; fi
 
-
-TWEAKS=`$DIALOG --title "Tweaks" --checklist "Select Custom Tweaks" 0 0 4 \
+TWEAKS=$(dialog --clear --title "Tweaks" --checklist "Select Custom Tweaks" 0 0 4 \
  OPTIMUS "Install NVIDIA Hybrid Graphic Drivers" on\
  FIX_PCI "Fix bad PCI Events (RazerBlade2017)" on\
- FIX_GPD "Fix Display Rotation (GPD Win)" off 3>&1 1>&2 2>&3`
+ FIX_GPD "Fix Display Rotation (GPD Win)" off 3>&1 1>&2 2>&3)
+if test $? -eq 1; then exit 1; fi
+
 for item in $TWEAKS; do
   if [ "$item" = "OPTIMUS" ]; then
     OPTIMUS=y
@@ -65,13 +68,17 @@ for item in $TWEAKS; do
 done
 
 while ! [ "$USERPW" = "$USERPW2" ] || [ -z "$USERPW" ]; do
-  USERPW=$($DIALOG --title "User Password" --passwordbox "Enter your user password" 0 0 3>&1 1>&2 2>&3)
-  USERPW2=$($DIALOG --title "User Password" --passwordbox "Repeat your user password" 0 0 3>&1 1>&2 2>&3)
+  USERPW=$(dialog --clear --title "User Password" --insecure --passwordbox "Enter your user password" 0 0 3>&1 1>&2 2>&3)
+  if test $? -eq 1; then exit 1; fi
+  USERPW2=$(dialog --clear --title "User Password" --insecure --passwordbox "Repeat your user password" 0 0 3>&1 1>&2 2>&3)
+  if test $? -eq 1; then exit 1; fi
 done
 
 while ! [ "$DISKPW" = "$DISKPW2" ] || [ -z "$DISKPW" ]; do
-  DISKPW=$($DIALOG --title "Disk Encryption" --passwordbox "Enter your disk encryption password" 0 0 3>&1 1>&2 2>&3)
-  DISKPW2=$($DIALOG --title "Disk Encryption" --passwordbox "Repeat your disk encryption password" 0 0 3>&1 1>&2 2>&3)
+  DISKPW=$(dialog --clear --title "Disk Encryption" --insecure --passwordbox "Enter your disk encryption password" 0 0 3>&1 1>&2 2>&3)
+  if test $? -eq 1; then exit 1; fi
+  DISKPW2=$(dialog --clear --title "Disk Encryption" --insecure --passwordbox "Repeat your disk encryption password" 0 0 3>&1 1>&2 2>&3)
+  if test $? -eq 1; then exit 1; fi
 done
 
 INSTALL_OPTIMUS="bumblebee mesa lib32-virtualgl nvidia lib32-nvidia-utils primus lib32-primus bbswitch"
@@ -140,219 +147,186 @@ $INSTALL_OPTIMUS
 
 Hit Ctrl-C to abort, Return to continue ...
 EOF
-$DIALOG --title "Summary" --textbox /tmp/install-summary.log 0 0
+dialog --clear --title "Summary" --textbox /tmp/install-summary.log 0 0 3>&1 1>&2 2>&3
+if test $? -eq 1; then exit 1; fi
 
+progress "Setting Up Disk" 0
 if [ "$WIPE" = "y" ]; then
+  progress "Deleting MBR Record" 1
   dd if=/dev/zero of=${ROOTDEV} bs=4M conv=fsync count=1
 
   if [ "$UEFI" = "y" ]; then
-    parted ${ROOTDEV} -s mklabel gpt
-    parted ${ROOTDEV} -s mkpart ESP fat32 1MiB 513MiB
-    parted ${ROOTDEV} -s set 1 boot on
-
-    echo -e "\e[33m::\e[0m formatting ${ROOTDEV}1 as FAT32"
-    mkfs.fat -F 32 -n EFIBOOT ${ROOTDEV}${RDAPPEND}1
-
+    progress "Create GPT Partitiontable" 2
+    parted ${ROOTDEV} -s mklabel gpt &> /dev/tty2
+    progress "Create Boot Partition" 3
+    parted ${ROOTDEV} -s mkpart ESP fat32 1MiB 513MiB &> /dev/tty2
+    parted ${ROOTDEV} -s set 1 boot on &> /dev/tty2
+    progress "Formatting Boot Partition as FAT32" 4
+    mkfs.fat -F 32 -n EFIBOOT ${ROOTDEV}${RDAPPEND}1 &> /dev/tty2
   else
-    parted ${ROOTDEV} -s mklabel msdos
-    parted ${ROOTDEV} -s mkpart primary 1MiB 513MiB
-    parted ${ROOTDEV} -s set 1 boot on
-
-    echo -e "\e[33m::\e[0m formatting ${ROOTDEV}1 as EXT4"
-    mkfs.ext4 ${ROOTDEV}${RDAPPEND}1 -L boot
+    progress "Create MSDOS Partitiontable" 2
+    parted ${ROOTDEV} -s mklabel msdos &> /dev/tty2
+    progress "Create Boot Partition" 3
+    parted ${ROOTDEV} -s mkpart primary 1MiB 513MiB &> /dev/tty2
+    parted ${ROOTDEV} -s set 1 boot on &> /dev/tty2
+    progress "Formatting Boot Partition as EXT4" 4
+    mkfs.ext4 -F ${ROOTDEV}${RDAPPEND}1 -L boot &> /dev/tty2
   fi
 
-  parted ${ROOTDEV} -s mkpart primary 513MiB 100%
+  progress "Create System Partition" 5
+  parted ${ROOTDEV} -s mkpart primary 513MiB 100% &> /dev/tty2
 
-  # create dm-crypt container
-  echo -n "${DISKPW}" | cryptsetup -c aes-xts-plain64 -s 512 luksFormat ${ROOTDEV}${RDAPPEND}2 -
-  echo -n "${DISKPW}" | cryptsetup luksOpen ${ROOTDEV}${RDAPPEND}2 cryptlvm -d -
+  progress "Create DM-Crypt Container" 6
+  echo -n "${DISKPW}" | cryptsetup -c aes-xts-plain64 -s 512 luksFormat ${ROOTDEV}${RDAPPEND}2 - &> /dev/tty2
+  echo -n "${DISKPW}" | cryptsetup luksOpen ${ROOTDEV}${RDAPPEND}2 cryptlvm -d - &> /dev/tty2
 
-  # setup lvm groups
-  pvcreate /dev/mapper/cryptlvm
-  vgcreate lvm /dev/mapper/cryptlvm
-  lvcreate -L 50G lvm -n system
-  lvcreate -l 100%FREE lvm -n home
+  progress "Setup LVM Volumes" 7
+  pvcreate /dev/mapper/cryptlvm &> /dev/tty2
+  vgcreate lvm /dev/mapper/cryptlvm &> /dev/tty2
+  lvcreate -L 50G lvm -n system &> /dev/tty2
+  lvcreate -l 100%FREE lvm -n home &> /dev/tty2
 
-  # create partitions
-  mkfs.ext4 /dev/mapper/lvm-system -L system
-  mkfs.ext4 /dev/mapper/lvm-home -L home
+  progress "Formatting Root Partition as EXT4" 8
+  mkfs.ext4 -F /dev/mapper/lvm-system -L system &> /dev/tty2
+
+  progress "Formatting Home Partition as EXT4" 9
+  mkfs.ext4 -F /dev/mapper/lvm-home -L home &> /dev/tty2
 else
-  # unlocking dm-crypt container
-  if ! echo -n "${DISKPW}" | cryptsetup luksOpen ${ROOTDEV}${RDAPPEND}2 cryptlvm -d - ; then
-    cryptsetup luksOpen ${ROOTDEV}${RDAPPEND}2 cryptlvm || exit 1
+  if [ "$UEFI" = "y" ]; then
+    progress "Formatting Boot Partition as FAT32" 2
+    mkfs.fat -F 32 -n EFIBOOT ${ROOTDEV}${RDAPPEND}1 &> /dev/tty2
+  else
+    progress "Formatting Boot Partition as EXT4" 4
+    mkfs.ext4 ${ROOTDEV}${RDAPPEND}1 -L boot &> /dev/tty2
   fi
 
-  # reload lvm volumes
-  vgchange -ay
+  progress "Unlocking DM-Crypt Container" 6
+  if ! echo -n "${DISKPW}" | cryptsetup luksOpen ${ROOTDEV}${RDAPPEND}2 cryptlvm -d - ; then
+    cryptsetup luksOpen ${ROOTDEV}${RDAPPEND}2 cryptlvm || exit 1 &> /dev/tty2
+  fi
 
-  # wait for device
+  progress "Load LVM Volumes" 8
+  vgchange -ay &> /dev/tty2
   sleep 1
 
-  # format system partition as ext4
-  mkfs.ext4 /dev/mapper/lvm-system -L system
-
-  if [ "$UEFI" = "y" ]; then
-    mkfs.fat -F 32 -n EFIBOOT ${ROOTDEV}${RDAPPEND}1
-  else
-    mkfs.ext4 ${ROOTDEV}${RDAPPEND}1 -L boot
-  fi
+  progress "Formatting Root Partition as EXT4" 9
+  mkfs.ext4 -F /dev/mapper/lvm-system -L system &> /dev/tty2
 fi
 
-echo -e "\e[33m::\e[0m mounting partitions to /mnt"
-mount /dev/mapper/lvm-system /mnt
+progress "Mounting /root to /mnt" 10
+mount /dev/mapper/lvm-system /mnt &> /dev/tty2
 
-mkdir /mnt/boot
-mount ${ROOTDEV}${RDAPPEND}1 /mnt/boot
+progress "Mounting /boot to /mnt/boot" 15
+mkdir /mnt/boot &> /dev/tty2
+mount ${ROOTDEV}${RDAPPEND}1 /mnt/boot &> /dev/tty2
 
-mkdir /mnt/home
-mount /dev/mapper/lvm-home /mnt/home
+progress "Mounting /home to /mnt/home" 20
+mkdir /mnt/home &> /dev/tty2
+mount /dev/mapper/lvm-home /mnt/home &> /dev/tty2
 
-echo -e "\e[33m::\e[0m setting up host pacman.conf"
-sed -i "s/#Color/Color/" /etc/pacman.conf
-
-echo -e "\e[33m::\e[0m installing base system"
-while ! pacstrap /mnt base; do
-  echo "Failed: repeating"
+progress "Installing Target: Base System" 25
+sed -i "s/#Color/Color/" /etc/pacman.conf &> /dev/tty2
+while ! pacstrap /mnt base &> /dev/tty2; do
+  echo "Failed: repeating" &> /dev/tty2
 done
 
-echo -e "\e[33m::\e[0m creating /etc/fstab"
+progress "Configure Base System" 30
 genfstab -p /mnt > /mnt/etc/fstab
 
-if [ "$CRYPTHOME" = "y" ]; then
-  echo -e "\e[33m::\e[0m creating /etc/crypttab"
-  echo "home	${ROOTDEV}${RDAPPEND}3	/.key" >> /mnt/etc/crypttab
-fi
-
-echo -e "\e[33m::\e[0m creating locales"
 cat > /mnt/etc/locale.gen << EOF
 de_DE.UTF-8 UTF-8
 en_GB.UTF-8 UTF-8
 en_US.UTF-8 UTF-8
 EOF
 
-echo -e "\e[33m::\e[0m setting language to de_DE.UTF-8"
 echo LANG=de_DE.UTF-8 > /mnt/etc/locale.conf
 
-echo -e "\e[33m::\e[0m setting console maps"
 cat > /mnt/etc/vconsole.conf << EOF
 KEYMAP="$KEYMAP"
 FONT=Lat2-Terminus16
 FONT_MAP=
 EOF
 
-echo -e "\e[33m::\e[0m setting timezone"
-ln -sf /usr/share/zoneinfo/Europe/Berlin /mnt/etc/localtime
+ln -sf /usr/share/zoneinfo/Europe/Berlin /mnt/etc/localtime &> /dev/tty2
 echo $HOSTNAME > /mnt/etc/hostname
 
-echo -e "\e[33m::\e[0m setting up pacman.conf"
-sed -i "s/#Color/Color/" /mnt/etc/pacman.conf
-sed -i '/#\[multilib\]/,/#Include = \/etc\/pacman.d\/mirrorlist/ s/#//' /mnt/etc/pacman.conf
+sed -i "s/#Color/Color/" /mnt/etc/pacman.conf &> /dev/tty2
+sed -i '/#\[multilib\]/,/#Include = \/etc\/pacman.d\/mirrorlist/ s/#//' /mnt/etc/pacman.conf &> /dev/tty2
 
-echo -e "\e[33m::\e[0m setting up initramfs"
-sed -i "s/block filesystems/block keymap encrypt lvm2 filesystems/" /mnt/etc/mkinitcpio.conf
-sed -i "s/MODULES=\"\"/MODULES=\"i915\"/" /mnt/etc/mkinitcpio.conf
+sed -i "s/block filesystems/block keymap encrypt lvm2 filesystems/" /mnt/etc/mkinitcpio.conf &> /dev/tty2
+sed -i "s/MODULES=\"\"/MODULES=\"i915\"/" /mnt/etc/mkinitcpio.conf &> /dev/tty2
 
-# Second stage
-cat > /mnt/finalize.sh << __END_OF_FILE__
-#!/bin/bash
+progress "Generating Locales" 35
+arch-chroot /mnt /bin/bash -c "locale-gen" &> /dev/tty2
 
-locale-gen
-. /etc/locale.conf
+progress "Installing Target: Updates" 40
+arch-chroot /mnt /bin/bash -c "while ! pacman -Syu --noconfirm; do echo repeat...; done" &> /dev/tty2
 
-echo -e "\e[33m::\e[0m installing updates"
-while ! pacman -Syu --noconfirm; do echo "repeat..."; done
+progress "Installing Target: Base Utils" 45
+arch-chroot /mnt /bin/bash -c "while ! pacman -S --noconfirm base-devel cmake linux-headers ${INSTALL_BASE}; do echo repeat...; done" &> /dev/tty2
 
-echo -e "\e[33m::\e[0m installing base tools"
-while ! pacman -S --noconfirm base-devel cmake linux-headers ${INSTALL_BASE}; do echo "repeat..."; done
+progress "Installing Target: Boot" 50
+arch-chroot /mnt /bin/bash -c "while ! pacman -S --noconfirm efibootmgr dosfstools gptfdisk grub-bios; do echo repeat...; done" &> /dev/tty2
 
-echo -e "\e[33m::\e[0m installing boot packages"
-while ! pacman -S --noconfirm efibootmgr dosfstools gptfdisk grub-bios; do echo "repeat..."; done
+progress "Installing Target: Desktop ($DESKTOP)" 55
+arch-chroot /mnt /bin/bash -c "while ! pacman -S --noconfirm xorg xorg-apps xf86-input-evdev xf86-input-synaptics ${DESKTOP_APPS}; do echo repeat...; done" &> /dev/tty2
 
-echo -e "\e[33m::\e[0m installing desktop ($DESKTOP)"
-while ! pacman -S --noconfirm xorg xorg-apps xf86-input-evdev xf86-input-synaptics ${DESKTOP_APPS}; do echo "repeat..."; done
-
-echo -e "\e[33m::\e[0m installing applications"
-while ! pacman -S --noconfirm ${INSTALL_DESKTOP} ${DESKTOP_MISC}; do echo "repeat..."; done
+progress "Installing Target: Applications" 60
+arch-chroot /mnt /bin/bash -c "while ! pacman -S --noconfirm ${INSTALL_DESKTOP} ${DESKTOP_MISC}; do echo repeat...; done" &> /dev/tty2
 
 if [ "${OPTIMUS}" = "y" ]; then
-  echo -e "\e[33m::\e[0m installing optimus drivers"
-  while ! pacman -S --noconfirm ${INSTALL_OPTIMUS}; do echo "repeat..."; done
+  progress "Installing Target: Optimus Drivers" 65
+  arch-chroot /mnt /bin/bash -c "while ! pacman -S --noconfirm ${INSTALL_OPTIMUS}; do echo repeat...; done" &> /dev/tty2
 fi
 
+
+progress "Configuring Desktop" 70
+# disable wine filetype associations
+sed "s/-a //g" -i /mnt/usr/share/wine/wine.inf &> /dev/tty2
+
 if ! [ "$DESKTOP" = "KDE" ]; then
-  echo -e "\e[33m::\e[0m Setting Qt5 GTK Look & Feel"
-  echo "QT_QPA_PLATFORMTHEME=gtk2" >> /etc/environment
+  echo "QT_QPA_PLATFORMTHEME=gtk2" >> /mnt/etc/environment
 fi
 
 if [ "$DESKTOP" = "DEEPIN" ]; then
-  sed -i "s/#greeter-session=.*/greeter-session=lightdm-deepin-greeter/" /etc/lightdm/lightdm.conf
+  sed -i "s/#greeter-session=.*/greeter-session=lightdm-deepin-greeter/" /mnt/etc/lightdm/lightdm.conf &> /dev/tty2
 fi
 
-mkinitcpio -p linux
-
-echo -e "\e[33m::\e[0m Disable wine filetype associations"
-sed "s/-a //g" -i /usr/share/wine/wine.inf
+progress "Rebuild Initramfs" 75
+arch-chroot /mnt /bin/bash -c "mkinitcpio -p linux" &> /dev/tty2
 
 if [ "$UEFI" = "y" ]; then
-  echo -e "\e[33m::\e[0m installing EFI bootloader to ${ROOTDEV}${RDAPPEND}1"
-  efibootmgr -c -d ${ROOTDEV} -p 1 -l \vmlinuz-linux -L "Arch Linux" -u "initrd=/initramfs-linux.img cryptdevice=${ROOTDEV}${RDAPPEND}2:cryptlvm root=/dev/mapper/lvm-system rw ${FIX_PCI}"
+  progress "Installing UEFI Bootloader to ${ROOTDEV}${RDAPPEND}1" 80
+  arch-chroot /mnt /bin/bash -c "efibootmgr -c -d ${ROOTDEV} -p 1 -l \vmlinuz-linux -L \"Arch Linux\" -u \"initrd=/initramfs-linux.img cryptdevice=${ROOTDEV}${RDAPPEND}2:cryptlvm root=/dev/mapper/lvm-system rw ${FIX_PCI}\"" &> /dev/tty2
 else
-  echo -e "\e[33m::\e[0m installing GRUB bootloader to ${ROOTDEV}${RDAPPEND}1"
-  grub-install ${ROOTDEV}
-  grub-mkconfig -o /boot/grub/grub.cfg
+  progress "Installing GRUB Bootloader to ${ROOTDEV}${RDAPPEND}1" 80
+  arch-chroot /mnt /bin/bash -c "grub-install ${ROOTDEV}; grub-mkconfig -o /boot/grub/grub.cfg" &> /dev/tty2
 fi
 
-echo -e "\e[33m::\e[0m creating user (${USERNAME})"
-useradd -m ${USERNAME}
-gpasswd -a ${USERNAME} audio
-gpasswd -a ${USERNAME} video
-gpasswd -a ${USERNAME} storage
-gpasswd -a ${USERNAME} optical
-gpasswd -a ${USERNAME} network
-gpasswd -a ${USERNAME} users
-gpasswd -a ${USERNAME} wheel
-gpasswd -a ${USERNAME} games
-gpasswd -a ${USERNAME} rfkill
-gpasswd -a ${USERNAME} scanner
-gpasswd -a ${USERNAME} power
-gpasswd -a ${USERNAME} lp
-gpasswd -a ${USERNAME} bumblebee
-gpasswd -a ${USERNAME} vboxusers
-gpasswd -a ${USERNAME} ${DESKTOP_DM}
+progress "Setting up User: ${USERNAME}" 85
+arch-chroot /mnt /bin/bash -c "useradd -m ${USERNAME}" &> /dev/tty2
+arch-chroot /mnt /bin/bash -c "usermod -a -G audio,video,storage,optical,network,users,wheel,games,rfkill,scanner,power,lp,vboxusers ${USERNAME}" &> /dev/tty2
+arch-chroot /mnt /bin/bash -c "gpasswd -a ${USERNAME} bumblebee" &> /dev/tty2
+arch-chroot /mnt /bin/bash -c "gpasswd -a ${USERNAME} ${DESKTOP_DM}" &> /dev/tty2
 
-echo -e "\e[33m::\e[0m merge userdata into rootfs (${USERNAME})"
-if [ -f /home/${USERNAME}/.bashrc ]; then
-  ln -s /home/${USERNAME}/.bashrc /root/.bashrc
-fi
+arch-chroot /mnt /bin/bash -c "echo \"${USERNAME}:${USERPW}\" | chpasswd" &> /dev/tty2
+arch-chroot /mnt /bin/bash -c "echo \"root:${USERPW}\" | chpasswd" &> /dev/tty2
 
-if [ -f /home/${USERNAME}/.zshrc ]; then
-  ln -s /home/${USERNAME}/.zshrc /root/.zshrc
-fi
+ln -s /home/${USERNAME}/.bashrc /mnt/root/.bashrc &> /dev/tty2
+ln -s /home/${USERNAME}/.zshrc /mnt/root/.zshrc &> /dev/tty2
+ln -s /home/${USERNAME}/.vimrc /mnt/root/.vimrc &> /dev/tty2
 
-if [ -f /home/${USERNAME}/.vimrc ]; then
-  ln -s /home/${USERNAME}/.vimrc /root/.vimrc
-fi
+progress "Configuring systemd Services" 90
+arch-chroot /mnt /bin/bash -c "systemctl enable ${DESKTOP_DM}" &> /dev/tty2
+arch-chroot /mnt /bin/bash -c "systemctl enable NetworkManager" &> /dev/tty2
+arch-chroot /mnt /bin/bash -c "systemctl enable bluetooth" &> /dev/tty2
+arch-chroot /mnt /bin/bash -c "systemctl enable avahi-daemon" &> /dev/tty2
+arch-chroot /mnt /bin/bash -c "systemctl enable bumblebeed" &> /dev/tty2
 
-if [ -f /home/${USERNAME}/lxc ]; then
-  rmdir /var/lib/lxc && ln -s /home/${USERNAME}/lxc /var/lib/lxc
-fi
+ln -s /dev/null /mnt/etc/udev/rules.d/80-net-setup-link.rules &> /dev/tty2
 
-echo "${USERNAME}:${USERPW}" | chpasswd
-echo "root:${USERPW}" | chpasswd
-
-echo -e "\e[33m::\e[0m enabling services"
-systemctl enable ${DESKTOP_DM}
-systemctl enable NetworkManager
-systemctl enable bluetooth
-systemctl enable avahi-daemon
-systemctl enable bumblebeed
-
-echo -e "\e[33m::\e[0m enable legacy network names"
-ln -s /dev/null /etc/udev/rules.d/80-net-setup-link.rules
-
-echo -e "\e[33m::\e[0m installing firstrun service"
-cat > /etc/systemd/system/firstrun.service << EOF
+progress "Installing Firstrun Service" 95
+cat > /mnt/etc/systemd/system/firstrun.service << EOF
 [Unit]
 Description=Firstrun Service
 
@@ -363,7 +337,7 @@ ExecStart=/firstrun.sh
 WantedBy=multi-user.target
 EOF
 
-cat > /firstrun.sh << EOF
+cat > /mnt/firstrun.sh << EOF
 #!/bin/bash
 # Locale
 localectl set-keymap $KEYMAP
@@ -373,19 +347,11 @@ localectl set-locale LANG=de_DE.UTF-8
 rm -f /etc/systemd/system/firstrun.service /firstrun.sh
 EOF
 
-chmod +x /firstrun.sh
+chmod +x /mnt/firstrun.sh &> /dev/tty2
+arch-chroot /mnt /bin/bash -c "systemctl enable firstrun.service" &> /dev/tty2
 
-systemctl enable firstrun
-
-sync
-__END_OF_FILE__
-
-chmod +x /mnt/finalize.sh
-arch-chroot /mnt /finalize.sh
-rm /mnt/finalize.sh
+progress "Syncing Disks" 100
 sync
 
-echo -e "\e[33m::\e[0m installation completed"
-echo -e "\e[31m->\e[0m Reboot into the new system"
-echo -n "[Hit Enter]" && read
-sync && reboot
+dialog --title "Installtion" --msgbox "Installation completed. Press Enter to reboot into the new system." 0 0
+reboot
