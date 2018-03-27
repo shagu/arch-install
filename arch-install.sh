@@ -48,7 +48,8 @@ DESKTOP=$(dialog --clear --title "Desktop" --radiolist "Please select your Deskt
   2 "KDE" off\
   3 "GNOME" off\
   4 "CINNAMON" off\
-  5 "DEEPIN" off 3>&1 1>&2 2>&3)
+  5 "XFCE" off\
+  6 "DEEPIN" off 3>&1 1>&2 2>&3)
 if test $? -eq 1; then exit 1; fi
 
 TWEAKS=$(dialog --clear --title "Tweaks" --checklist "Select Custom Tweaks" 0 0 4 \
@@ -93,7 +94,7 @@ INSTALL_DESKTOP_QT="kid3 wireshark-qt qt-recordmydesktop"
 case $DESKTOP in
   "1")
     DESKTOP="MATE"
-    DESKTOP_APPS="mate mate-extra lightdm lightdm-gtk-greeter-settings networkmanager pulseaudio network-manager-applet blueman gvfs-smb gvfs-mtp"
+    DESKTOP_APPS="mate mate-extra lightdm-gtk-greeter-settings networkmanager pulseaudio network-manager-applet blueman gvfs-smb gvfs-mtp"
     DESKTOP_DM="lightdm"
     DESKTOP_MISC="${INSTALL_DESKTOP_GTK} totem gnome-keyring awesome  wireshark-gtk"
   ;;
@@ -116,6 +117,12 @@ case $DESKTOP in
     DESKTOP_MISC="${INSTALL_DESKTOP_GTK}"
   ;;
   "5")
+    DESKTOP="XFCE"
+    DESKTOP_APPS="xfce4 xfce4-goodies lightdm-gtk-greeter-settings networkmanager pulseaudio network-manager-applet blueman gvfs-smb gvfs-mtp"
+    DESKTOP_DM="lightdm"
+    DESKTOP_MISC="${INSTALL_DESKTOP_GTK} totem gnome-keyring awesome  wireshark-gtk"
+  ;;
+  "6")
     DESKTOP="DEEPIN"
     DESKTOP_APPS="deepin deepin-extra networkmanager"
     DESKTOP_DM="lightdm"
