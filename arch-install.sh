@@ -53,8 +53,8 @@ DESKTOP=$(dialog --clear --title "Desktop" --radiolist "Please select your Deskt
 if test $? -eq 1; then exit 1; fi
 
 TWEAKS=$(dialog --clear --title "Tweaks" --checklist "Select Custom Tweaks" 0 0 4 \
- OPTIMUS "Install NVIDIA Hybrid Graphic Drivers" on\
- FIX_PCI "Fix bad PCI Events (RazerBlade2017)" on\
+ OPTIMUS "Install NVIDIA Hybrid Graphic Drivers" off\
+ FIX_PCI "Fix bad PCI Events (RazerBlade2017)" off\
  FIX_GPD "Fix Display Rotation (GPD Win)" off 3>&1 1>&2 2>&3)
 if test $? -eq 1; then exit 1; fi
 
