@@ -328,6 +328,7 @@ if [ "$UEFI" = "y" ]; then
   arch-chroot /mnt /bin/bash -c "efibootmgr -c -d ${ROOTDEV} -p 1 -l \vmlinuz-linux -L \"Arch Linux\" -u \"initrd=/initramfs-linux.img cryptdevice=${ROOTDEV}${RDAPPEND}2:cryptlvm root=/dev/mapper/lvm-system rw ${FIX_PCI}\"" &> /dev/tty2
 else
   progress "Installing GRUB Bootloader to ${ROOTDEV}${RDAPPEND}1" 80
+  sed -i "s/GRUB_CMDLINE_LINUX=\"\"/GRUB_CMDLINE_LINUX=\"cryptdevice=${ROOTDEV}${RDAPPEND}2:cryptlvm ${FIX_PCI}\"/" /mnt/etc/default/grub &> /dev/tty2
   arch-chroot /mnt /bin/bash -c "grub-install ${ROOTDEV}; grub-mkconfig -o /boot/grub/grub.cfg" &> /dev/tty2
 fi
 
