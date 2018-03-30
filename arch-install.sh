@@ -62,9 +62,9 @@ for item in $TWEAKS; do
   if [ "$item" = "OPTIMUS" ]; then
     OPTIMUS=y
   elif [ "$item" = "FIX_PCI" ]; then
-    FIX_PCI="pci=noaer button.lid_init_state=open"
+    CUSTOM_CMDLINE="pci=noaer button.lid_init_state=open"
   elif [ "$item" == "FIX_GPD" ]; then
-    FIX_PCI="$FIX_PCI fbcon=rotate:1 dmi_product_name=GPD-WINI55"
+    CUSTOM_CMDLINE="$CUSTOM_CMDLINE fbcon=rotate:1 dmi_product_name=GPD-WINI55"
   fi
 done
 
@@ -325,10 +325,10 @@ arch-chroot /mnt /bin/bash -c "mkinitcpio -p linux" &> /dev/tty2
 
 if [ "$UEFI" = "y" ]; then
   progress "Installing UEFI Bootloader to ${ROOTDEV}${RDAPPEND}1" 80
-  arch-chroot /mnt /bin/bash -c "efibootmgr -c -d ${ROOTDEV} -p 1 -l \vmlinuz-linux -L \"Arch Linux\" -u \"initrd=/initramfs-linux.img cryptdevice=${ROOTDEV}${RDAPPEND}2:cryptlvm root=/dev/mapper/lvm-system rw ${FIX_PCI}\"" &> /dev/tty2
+  arch-chroot /mnt /bin/bash -c "efibootmgr -c -d ${ROOTDEV} -p 1 -l \vmlinuz-linux -L \"Arch Linux\" -u \"initrd=/initramfs-linux.img cryptdevice=${ROOTDEV}${RDAPPEND}2:cryptlvm root=/dev/mapper/lvm-system rw ${CUSTOM_CMDLINE}\"" &> /dev/tty2
 else
   progress "Installing GRUB Bootloader to ${ROOTDEV}${RDAPPEND}1" 80
-  sed -i "s/GRUB_CMDLINE_LINUX=\"\"/GRUB_CMDLINE_LINUX=\"cryptdevice=${ROOTDEV}${RDAPPEND}2:cryptlvm ${FIX_PCI}\"/" /mnt/etc/default/grub &> /dev/tty2
+  sed -i "s/GRUB_CMDLINE_LINUX=\"\"/GRUB_CMDLINE_LINUX=\"cryptdevice=${ROOTDEV}${RDAPPEND}2:cryptlvm ${CUSTOM_CMDLINE}\"/" /mnt/etc/default/grub &> /dev/tty2
   arch-chroot /mnt /bin/bash -c "grub-install ${ROOTDEV}; grub-mkconfig -o /boot/grub/grub.cfg" &> /dev/tty2
 fi
 
