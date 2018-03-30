@@ -295,6 +295,27 @@ if ! [ "$DESKTOP" = "KDE" ]; then
   echo "QT_QPA_PLATFORMTHEME=gtk2" >> /mnt/etc/environment
 fi
 
+if [ "$DESKTOP" = "KDE" ]; then
+  cat > /mnt/etc/sddm.conf << EOF
+[Autologin]
+Relogin=false
+Session=
+User=
+
+[General]
+HaltCommand=
+RebootCommand=
+
+[Theme]
+Current=breeze
+CursorTheme=breeze_cursors
+
+[Users]
+MaximumUid=65000
+MinimumUid=1000
+EOF
+fi
+
 if [ "$DESKTOP" = "DEEPIN" ]; then
   sed -i "s/#greeter-session=.*/greeter-session=lightdm-deepin-greeter/" /mnt/etc/lightdm/lightdm.conf &> /dev/tty2
 fi
