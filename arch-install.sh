@@ -204,7 +204,7 @@ else
     mkfs.fat -F 32 -n EFIBOOT ${ROOTDEV}${RDAPPEND}1 &> /dev/tty2
   else
     progress "Formatting Boot Partition as EXT4" 4
-    mkfs.ext4 ${ROOTDEV}${RDAPPEND}1 -L boot &> /dev/tty2
+    mkfs.ext4 -F ${ROOTDEV}${RDAPPEND}1 -L boot &> /dev/tty2
   fi
 
   progress "Unlocking DM-Crypt Container" 6
