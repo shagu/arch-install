@@ -231,10 +231,6 @@ progress "Mounting /home to /mnt/home" 20
 mkdir /mnt/home &> /dev/tty2
 mount /dev/mapper/lvm-home /mnt/home &> /dev/tty2
 
-progress "Autoselecting mirror servers" 22
-cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.old
-rankmirrors -n 4 /etc/pacman.d/mirrorlist.old > /etc/pacman.d/mirrorlist
-
 progress "Installing Target: Base System" 25
 sed -i "s/#Color/Color/" /etc/pacman.conf &> /dev/tty2
 while ! pacstrap /mnt base &> /dev/tty2; do
