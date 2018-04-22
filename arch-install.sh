@@ -286,7 +286,6 @@ if [ "${OPTIMUS}" = "y" ]; then
   arch-chroot /mnt /bin/bash -c "while ! pacman -S --noconfirm ${INSTALL_OPTIMUS}; do echo repeat...; done" &> /dev/tty2
 fi
 
-
 progress "Configuring Desktop" 70
 # disable wine filetype associations
 sed "s/-a //g" -i /mnt/usr/share/wine/wine.inf &> /dev/tty2
@@ -333,6 +332,7 @@ else
 fi
 
 progress "Setting up User: ${USERNAME}" 85
+echo "${USERNAME} ALL=(ALL) ALL" >> /mnt/etc/sudoers
 arch-chroot /mnt /bin/bash -c "useradd -m ${USERNAME}" &> /dev/tty2
 arch-chroot /mnt /bin/bash -c "usermod -a -G audio,video,storage,optical,network,users,wheel,games,rfkill,scanner,power,lp,vboxusers ${USERNAME}" &> /dev/tty2
 arch-chroot /mnt /bin/bash -c "gpasswd -a ${USERNAME} bumblebee" &> /dev/tty2
