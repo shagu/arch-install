@@ -273,7 +273,7 @@ progress "Installing Target: Base Utils" 45
 arch-chroot /mnt /bin/bash -c "while ! pacman -S --noconfirm base-devel cmake linux-headers ${INSTALL_BASE}; do echo repeat...; done" &> /dev/tty2
 
 progress "Installing Target: Boot" 50
-arch-chroot /mnt /bin/bash -c "while ! pacman -S --noconfirm dosfstools gptfdisk grub efibootmgr; do echo repeat...; done" &> /dev/tty2
+arch-chroot /mnt /bin/bash -c "while ! pacman -S --noconfirm dosfstools gptfdisk grub efibootmgr intel-ucode; do echo repeat...; done" &> /dev/tty2
 
 progress "Installing Target: Desktop ($DESKTOP)" 55
 arch-chroot /mnt /bin/bash -c "while ! pacman -S --noconfirm xorg xorg-apps xf86-input-evdev xf86-input-synaptics ${DESKTOP_APPS}; do echo repeat...; done" &> /dev/tty2
