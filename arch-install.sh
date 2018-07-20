@@ -273,7 +273,7 @@ progress "Installing Target: Base Utils" 45
 arch-chroot /mnt /bin/bash -c "while ! pacman -S --noconfirm base-devel cmake linux-headers ${INSTALL_BASE}; do echo repeat...; done" &> /dev/tty2
 
 progress "Installing Target: Boot" 50
-arch-chroot /mnt /bin/bash -c "while ! pacman -S --noconfirm efibootmgr dosfstools gptfdisk grub-bios; do echo repeat...; done" &> /dev/tty2
+arch-chroot /mnt /bin/bash -c "while ! pacman -S --noconfirm dosfstools gptfdisk grub; do echo repeat...; done" &> /dev/tty2
 
 progress "Installing Target: Desktop ($DESKTOP)" 55
 arch-chroot /mnt /bin/bash -c "while ! pacman -S --noconfirm xorg xorg-apps xf86-input-evdev xf86-input-synaptics ${DESKTOP_APPS}; do echo repeat...; done" &> /dev/tty2
@@ -322,14 +322,14 @@ fi
 progress "Rebuild Initramfs" 75
 arch-chroot /mnt /bin/bash -c "mkinitcpio -p linux" &> /dev/tty2
 
+progress "Installing GRUB Bootloader to ${ROOTDEV}${RDAPPEND}1" 80
+sed -i "s|GRUB_CMDLINE_LINUX=\"\"|GRUB_CMDLINE_LINUX=\"cryptdevice=${ROOTDEV}${RDAPPEND}2:cryptlvm ${CUSTOM_CMDLINE}\"|" /mnt/etc/default/grub &> /dev/tty2
 if [ "$UEFI" = "y" ]; then
-  progress "Installing UEFI Bootloader to ${ROOTDEV}${RDAPPEND}1" 80
-  arch-chroot /mnt /bin/bash -c "efibootmgr -c -d ${ROOTDEV} -p 1 -l \vmlinuz-linux -L \"Arch Linux\" -u \"initrd=/initramfs-linux.img cryptdevice=${ROOTDEV}${RDAPPEND}2:cryptlvm root=/dev/mapper/lvm-system rw ${CUSTOM_CMDLINE}\"" &> /dev/tty2
+  arch-chroot /mnt /bin/bash -c "grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB" &> /dev/tty2
 else
-  progress "Installing GRUB Bootloader to ${ROOTDEV}${RDAPPEND}1" 80
-  sed -i "s|GRUB_CMDLINE_LINUX=\"\"|GRUB_CMDLINE_LINUX=\"cryptdevice=${ROOTDEV}${RDAPPEND}2:cryptlvm ${CUSTOM_CMDLINE}\"|" /mnt/etc/default/grub &> /dev/tty2
-  arch-chroot /mnt /bin/bash -c "grub-install ${ROOTDEV}; grub-mkconfig -o /boot/grub/grub.cfg" &> /dev/tty2
+  arch-chroot /mnt /bin/bash -c "grub-install --target=i386-pc ${ROOTDEV}" &> /dev/tty2
 fi
+arch-chroot /mnt /bin/bash -c "grub-mkconfig -o /boot/grub/grub.cfg" &> /dev/tty2
 
 progress "Setting up User: ${USERNAME}" 85
 echo "${USERNAME} ALL=(ALL) ALL" >> /mnt/etc/sudoers
