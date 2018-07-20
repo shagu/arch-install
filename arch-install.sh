@@ -324,6 +324,8 @@ arch-chroot /mnt /bin/bash -c "mkinitcpio -p linux" &> /dev/tty2
 
 progress "Installing GRUB Bootloader to ${ROOTDEV}${RDAPPEND}1" 80
 sed -i "s|GRUB_CMDLINE_LINUX=\"\"|GRUB_CMDLINE_LINUX=\"cryptdevice=${ROOTDEV}${RDAPPEND}2:cryptlvm ${CUSTOM_CMDLINE}\"|" /mnt/etc/default/grub &> /dev/tty2
+sed -i "s/GRUB_TIMEOUT=5/GRUB_TIMEOUT=3/" /mnt/etc/default/grub &> /dev/tty2
+sed -i "s/GRUB_GFXMODE=auto/GRUB_GFXMODE=1920x1080,auto/" /mnt/etc/default/grub &> /dev/tty2
 if [ "$UEFI" = "y" ]; then
   arch-chroot /mnt /bin/bash -c "grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB" &> /dev/tty2
 else
