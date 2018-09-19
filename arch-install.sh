@@ -246,7 +246,7 @@ en_GB.UTF-8 UTF-8
 en_US.UTF-8 UTF-8
 EOF
 
-echo LANG=de_DE.UTF-8 > /mnt/etc/locale.conf
+echo LANG=en_US.UTF-8 > /mnt/etc/locale.conf
 
 cat > /mnt/etc/vconsole.conf << EOF
 KEYMAP="$KEYMAP"
@@ -373,7 +373,7 @@ cat > /mnt/firstrun.sh << EOF
 # Locale
 localectl set-keymap $KEYMAP
 localectl set-x11-keymap $KEYMAP
-localectl set-locale LANG=de_DE.UTF-8
+localectl set-locale LANG=en_US.UTF-8
 
 rm -f /etc/systemd/system/firstrun.service /firstrun.sh
 EOF
