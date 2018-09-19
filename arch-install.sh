@@ -88,7 +88,7 @@ INSTALL_BASE="vim openssh wget htop ncdu screen zsh net-tools unp debootstrap un
 INSTALL_DESKTOP="mpv youtube-dl git fuseiso atom chromium firefox vlc ffmpeg gimp blender owncloud-client wine wine-mono wine_gecko steam libreoffice ttf-liberation ttf-ubuntu-font-family ttf-droid ttf-dejavu ttf-freefont noto-fonts-emoji alsa-utils samba lib32-libpulse gst-plugins-ugly gst-plugins-bad gst-libav android-tools pulseaudio-zeroconf noto-fonts picard inkscape audacity pidgin virtualbox virtualbox-host-modules-arch keepassx2"
 
 INSTALL_DESKTOP_GTK="easytag wireshark-gtk gtk-recordmydesktop openshot gcolor2 meld paprefs evolution qt5-styleplugins"
-INSTALL_DESKTOP_QT="kid3 wireshark-qt qt5 breeze-kde4"
+INSTALL_DESKTOP_QT="kid3 wireshark-qt qt5"
 
 # Setup Variables
 case $DESKTOP in
@@ -100,7 +100,7 @@ case $DESKTOP in
   ;;
   "2")
     DESKTOP="KDE"
-    DESKTOP_APPS="plasma kde-applications kde-l10n-de"
+    DESKTOP_APPS="plasma kde-applications"
     DESKTOP_DM="sddm"
     DESKTOP_MISC="${INSTALL_DESKTOP_QT}"
   ;;
