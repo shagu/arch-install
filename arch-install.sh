@@ -102,7 +102,9 @@ case $DESKTOP in
     DESKTOP="KDE"
     DESKTOP_APPS="plasma kde-applications"
     DESKTOP_DM="sddm"
-    DESKTOP_MISC="${INSTALL_DESKTOP_QT}"
+    DESKTOP_THEME="materia-kde materia-gtk-theme kvantum-theme-materia papirus-icon-theme"
+    DESKTOP_TWEAKS="libdbusmenu-{qt4,qt5,gtk2,gtk3} lib32-libdbusmenu-{glib,gtk2,gtk3} appmenu-gtk-module appmenu-qt4 plasma5-applets-active-window-control"
+    DESKTOP_MISC="${INSTALL_DESKTOP_QT} ${DESKTOP_TWEAKS} ${DESKTOP_THEME}"
   ;;
   "3")
     DESKTOP="GNOME"
