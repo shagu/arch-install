@@ -54,6 +54,8 @@ if test $? -eq 1; then exit 1; fi
 
 TWEAKS=$(dialog --clear --title "Tweaks" --checklist "Select Custom Tweaks" 0 0 4 \
  OPTIMUS "Install NVIDIA Hybrid Graphic Drivers" off\
+ INTEL "Enable Latest Intel Graphic Options" off\
+ NO_HDPI "Disable HiDPI Scaling" off\
  FIX_PCI "Fix bad PCI Events (RazerBlade2017)" off\
  FIX_GPD "Fix Display Rotation (GPD Win)" off 3>&1 1>&2 2>&3)
 if test $? -eq 1; then exit 1; fi
@@ -61,12 +63,20 @@ if test $? -eq 1; then exit 1; fi
 for item in $TWEAKS; do
   if [ "$item" = "OPTIMUS" ]; then
     OPTIMUS=y
+  elif [ "$item" = "INTEL" ]; then
+    INTEL=y
+  elif [ "$item" = "NO_HIDPI" ]; then
+    NO_HIDPI=y
   elif [ "$item" = "FIX_PCI" ]; then
     CUSTOM_CMDLINE="pci=noaer button.lid_init_state=open"
   elif [ "$item" == "FIX_GPD" ]; then
     CUSTOM_CMDLINE="$CUSTOM_CMDLINE fbcon=rotate:1 dmi_product_name=GPD-WINI55"
   fi
 done
+
+if dialog --clear --title "Mirror" --yesno "Select a mirror?" 0 0 3>&1 1>&2 2>&3; then
+  vim /etc/pacman.d/mirrorlist
+fi
 
 while ! [ "$USERPW" = "$USERPW2" ] || [ -z "$USERPW" ]; do
   USERPW=$(dialog --clear --title "User Password" --insecure --passwordbox "Enter your user password" 0 0 3>&1 1>&2 2>&3)
@@ -294,6 +304,7 @@ sed "s/-a //g" -i /mnt/usr/share/wine/wine.inf &> /dev/tty2
 
 if ! [ "$DESKTOP" = "KDE" ]; then
   echo "QT_QPA_PLATFORMTHEME=gtk2" >> /mnt/etc/environment
+  echo "QT_STYLE_OVERRIDE=gtk" >> /mnt/etc/environment
 fi
 
 if [ "$DESKTOP" = "KDE" ]; then
@@ -321,19 +332,41 @@ if [ "$DESKTOP" = "DEEPIN" ]; then
   sed -i "s/#greeter-session=.*/greeter-session=lightdm-deepin-greeter/" /mnt/etc/lightdm/lightdm.conf &> /dev/tty2
 fi
 
+progress "Configuring Hardware Settings" 71
+if [ "INTEL" = "y" ]; then
+  echo "options i915 enable_guc=3" >> /mnt/etc/modprobe.d/i915.conf
+  echo "options i915 enable_fbc=1" >> /mnt/etc/modprobe.d/i915.conf
+  echo "options i915 fastboot=1" >> /mnt/etc/modprobe.d/i915.conf
+fi
+
+if [ "NO_HIDPI" = "y" ]; then
+  echo "GDK_SCALE=1" >> /mnt/etc/environment
+  echo "GDK_DPI_SCALE=1" >> /mnt/etc/environment
+  echo "QT_SCALE_FACTOR=1" >> /mnt/etc/environment
+  echo "QT_AUTO_SCREEN_SCALE_FACTOR=0" >> /mnt/etc/environment
+fi
+
 progress "Rebuild Initramfs" 75
 arch-chroot /mnt /bin/bash -c "mkinitcpio -p linux" &> /dev/tty2
 
-progress "Installing GRUB Bootloader to ${ROOTDEV}${RDAPPEND}1" 80
-sed -i "s|GRUB_CMDLINE_LINUX=\"\"|GRUB_CMDLINE_LINUX=\"cryptdevice=${ROOTDEV}${RDAPPEND}2:cryptlvm ${CUSTOM_CMDLINE}\"|" /mnt/etc/default/grub &> /dev/tty2
-sed -i "s/GRUB_TIMEOUT=5/GRUB_TIMEOUT=3/" /mnt/etc/default/grub &> /dev/tty2
-sed -i "s/GRUB_GFXMODE=auto/GRUB_GFXMODE=1920x1080,auto/" /mnt/etc/default/grub &> /dev/tty2
 if [ "$UEFI" = "y" ]; then
-  arch-chroot /mnt /bin/bash -c "grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB" &> /dev/tty2
+  progress "Installing systemd-boot to ${ROOTDEV}${RDAPPEND}1" 80
+  arch-chroot /mnt /bin/bash -c "bootctl --path=/boot install" &> /dev/tty2
+  echo "title   Arch Linux" > /mnt/boot/loader/entries/arch.conf
+  echo "linux   /vmlinuz-linux" >> /mnt/boot/loader/entries/arch.conf
+  echo "initrd  /intel-ucode.img" >> /mnt/boot/loader/entries/arch.conf
+  echo "initrd  /initramfs-linux.img" >> /mnt/boot/loader/entries/arch.conf
+  echo "options root=/dev/mapper/lvm-system rw cryptdevice=${ROOTDEV}${RDAPPEND}2:cryptlvm quiet" >> /mnt/boot/loader/entries/arch.conf
 else
+  progress "Installing GRUB Bootloader to ${ROOTDEV}${RDAPPEND}1" 80
+  arch-chroot /mnt /bin/bash -c "while ! pacman -S --noconfirm grub efibootmgr intel-ucode; do echo repeat...; done" &> /dev/tty2
+  sed -i "s|GRUB_CMDLINE_LINUX=\"\"|GRUB_CMDLINE_LINUX=\"cryptdevice=${ROOTDEV}${RDAPPEND}2:cryptlvm ${CUSTOM_CMDLINE}\"|" /mnt/etc/default/grub &> /dev/tty2
+  sed -i "s/GRUB_TIMEOUT=5/GRUB_TIMEOUT=3/" /mnt/etc/default/grub &> /dev/tty2
+  sed -i "s/GRUB_GFXMODE=auto/GRUB_GFXMODE=1920x1080,auto/" /mnt/etc/default/grub &> /dev/tty2
   arch-chroot /mnt /bin/bash -c "grub-install --target=i386-pc ${ROOTDEV}" &> /dev/tty2
+  arch-chroot /mnt /bin/bash -c "grub-mkconfig -o /boot/grub/grub.cfg" &> /dev/tty2
 fi
-arch-chroot /mnt /bin/bash -c "grub-mkconfig -o /boot/grub/grub.cfg" &> /dev/tty2
+
 
 progress "Setting up User: ${USERNAME}" 85
 echo "${USERNAME} ALL=(ALL) ALL" >> /mnt/etc/sudoers
