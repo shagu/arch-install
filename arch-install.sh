@@ -333,13 +333,13 @@ if [ "$DESKTOP" = "DEEPIN" ]; then
 fi
 
 progress "Configuring Hardware Settings" 71
-if [ "INTEL" = "y" ]; then
+if [ "$INTEL" = "y" ]; then
   echo "options i915 enable_guc=3" >> /mnt/etc/modprobe.d/i915.conf
   echo "options i915 enable_fbc=1" >> /mnt/etc/modprobe.d/i915.conf
   echo "options i915 fastboot=1" >> /mnt/etc/modprobe.d/i915.conf
 fi
 
-if [ "NO_HIDPI" = "y" ]; then
+if [ "$NO_HIDPI" = "y" ]; then
   echo "GDK_SCALE=1" >> /mnt/etc/environment
   echo "GDK_DPI_SCALE=1" >> /mnt/etc/environment
   echo "QT_SCALE_FACTOR=1" >> /mnt/etc/environment
