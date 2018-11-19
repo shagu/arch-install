@@ -118,7 +118,7 @@ case $DESKTOP in
   ;;
   "3")
     DESKTOP="GNOME"
-    DESKTOP_APPS="gnome gnome-extra networkmanager"
+    DESKTOP_APPS="gnome gnome-extra chrome-gnome-shell flatpak-builder networkmanager"
     DESKTOP_DM="gdm"
     DESKTOP_MISC="${INSTALL_DESKTOP_GTK}"
   ;;
