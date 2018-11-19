@@ -52,7 +52,7 @@ DESKTOP=$(dialog --clear --title "Desktop" --radiolist "Please select your Deskt
   6 "DEEPIN" off 3>&1 1>&2 2>&3)
 if test $? -eq 1; then exit 1; fi
 
-TWEAKS=$(dialog --clear --title "Tweaks" --checklist "Select Custom Tweaks" 0 0 4 \
+TWEAKS=$(dialog --clear --title "Tweaks" --checklist "Select Custom Tweaks" 0 0 0 \
  OPTIMUS "Install NVIDIA Hybrid Graphic Drivers" off\
  INTEL "Enable Latest Intel Graphic Options" off\
  NO_HDPI "Disable HiDPI Scaling" off\
