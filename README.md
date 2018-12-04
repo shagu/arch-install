@@ -11,7 +11,7 @@ A simple install script, focused to make an encrypted archlinux installation as 
 Grab the latest Arch install iso, burn it to cdrom or usbstick and boot it. After that, your install procedure could look like the following:
 
     wifi-menu
-    wget https://raw.githubusercontent.com/shagu/arch-install/master/arch-install.sh
+    wget https://gitlab.com/shagu/arch-install/raw/master/arch-install.sh
     bash arch-install.sh
 
 ## Features
@@ -22,7 +22,7 @@ The core features are the following:
 * Several Desktops
 * LUKS Encryption
 * LVM Volumes
-* UEFI and BIOSa
+* UEFI and BIOS
 * Reuse Previous Installation (keep /home untouched)
 
 ## Supported Desktops
