@@ -14,6 +14,30 @@ Grab the latest Arch install iso, burn it to cdrom or usbstick and boot it. Afte
     wget https://gitlab.com/shagu/arch-install/raw/master/arch-install.sh
     bash arch-install.sh
 
+## Build ISO
+
+### Dependencies
+First make sure to have `archiso` installed. In order to modify it, copy it somewhere:
+
+    pacman -S archiso
+    cp -r /usr/share/archiso/configs/releng/ archiso
+
+### Headless
+If you wish to allow a headless installations, you can enable ssh by default and let root login with empty password (Don't do that in untrusted networks):
+
+    echo "sed -i 's/#\(PermitEmptyPasswords \).\+/\1yes/' /etc/ssh/sshd_config" >> archiso/airootfs/root/customize_airootfs.sh
+    echo "systemctl enable sshd" >> archiso/airootfs/root/customize_airootfs.sh
+
+### Build
+Copy the arch-installer into the new rootfs and create the ISO:
+
+    mkdir -p archiso/airootfs/usr/bin
+    cp arch-install.sh archiso/airootfs/usr/bin/arch-install
+
+    cd archiso
+    mkdir out
+    ./build.sh -v
+
 ## Features
 
 The core features are the following:
