@@ -1,0 +1,45 @@
+image: archlinux/base
+
+before_script:
+  - pacman -Syu --noconfirm
+  - pacman -S base --noconfirm
+  - pacman -S --noconfirm archiso
+
+default:
+  script:
+    - cp -r /usr/share/archiso/configs/releng/ archiso
+    - mkdir -p archiso/airootfs/usr/bin archiso/out
+    - cp arch-install.sh archiso/airootfs/usr/bin/arch-install
+    - cd archiso && ./build.sh -v
+    - mv archiso/out/archlinux-*.iso .
+    - mv archlinux-*.iso $(ls -1 archlinux-*.iso | sed 's/archlinux/archlinux-installer/g')
+
+  artifacts:
+    name: "archlinux-installer"
+    paths:
+      - archlinux-*.iso
+  #only:
+  #  - JOB_DISABLED
+  #tags:
+  #  - loop
+
+ssh:
+  script:
+    - cp -r /usr/share/archiso/configs/releng/ archiso
+    - echo "sed -i 's/#\(PermitEmptyPasswords \).\+/\1yes/' /etc/ssh/sshd_config" >> archiso/airootfs/root/customize_airootfs.sh
+    - echo "systemctl enable sshd" >> archiso/airootfs/root/customize_airootfs.sh
+    - mkdir -p archiso/airootfs/usr/bin archiso/out
+    - cp arch-install.sh archiso/airootfs/usr/bin/arch-install
+    - cd archiso && ./build.sh -v
+    - mv archiso/out/archlinux-*.iso .
+    - mv archlinux-*.iso $(ls -1 archlinux-*.iso | sed 's/archlinux/archlinux-installer-ssh/g')
+
+  artifacts:
+    name: "archlinux-installer-ssh"
+    paths:
+      - archlinux-*.iso
+  #only:
+  #  - JOB_DISABLED
+  #tags:
+  #  - loop
+

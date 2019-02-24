@@ -1,89 +1,228 @@
 #!/bin/bash
 
 function progress() {
-  echo $2 | dialog --title "Installation" --gauge "$1" 0 40 0
+  dialog --infobox "$1" 3 42
 }
+
+SYSTEMD=""
+SYSTEMD_DESKTOP="NetworkManager bluetooth avahi-daemon"
+UGROUPS="audio video storage optical network users wheel games rfkill scanner power lp"
+PACKAGES="base-devel cmake linux-headers dosfstools gptfdisk intel-ucode vim openssh git wget htop ncdu screen net-tools unrar unzip p7zip rfkill bind-tools alsa-utils"
+PACKAGE_DESKTOP="xorg xorg-apps xf86-input-evdev xf86-input-synaptics"
+PACKAGE_DESKTOP_GTK="paprefs qt5-styleplugins"
+PACKAGE_DESKTOP_QT="qt5"
+PACKAGE_DESKTOP_MATE="mate mate-extra lightdm-gtk-greeter-settings networkmanager pulseaudio network-manager-applet blueman gvfs-smb gvfs-mtp totem gnome-keyring"
+PACKAGE_DESKTOP_MATE_DM="lightdm"
+PACKAGE_DESKTOP_KDE="plasma kde-applications"
+PACKAGE_DESKTOP_KDE_DM="sddm"
+PACKAGE_DESKTOP_GNOME="gnome gnome-extra chrome-gnome-shell flatpak-builder networkmanager"
+PACKAGE_DESKTOP_GNOME_DM="gdm"
+PACKAGE_DESKTOP_CINNAMON="gnome gnome-extra networkmanager cinnamon nemo"
+PACKAGE_DESKTOP_CINNAMON_DM="gdm"
+PACKAGE_DESKTOP_XFCE="xfce4 xfce4-goodies lightdm-gtk-greeter-settings networkmanager pulseaudio network-manager-applet blueman gvfs-smb gvfs-mtp totem gnome-keyring"
+PACKAGE_DESKTOP_XFCE_DM="lightdm"
+PACKAGE_DESKTOP_DEEPIN_APPS="deepin deepin-extra networkmanager"
+PACKAGE_DESKTOP_DEEPIN_DM="lightdm"
+PACKAGE_EXT_CONSOLE="zsh unp lxc debootstrap rsnapshot youtube-dl samba android-tools fuseiso"
+PACKAGE_EXT_OPTIMUS="bumblebee lib32-virtualgl nvidia lib32-nvidia-utils primus lib32-primus bbswitch"
+PACKAGE_EXT_FONTS="ttf-liberation ttf-ubuntu-font-family ttf-droid ttf-dejavu ttf-freefont noto-fonts-emoji"
+PACKAGE_EXT_CODECS="gst-plugins-ugly gst-plugins-bad gst-libav ffmpeg"
+PACKAGE_EXT_APPS="mpv atom chromium firefox vlc gimp blender nextcloud-client libreoffice lib32-libpulse pulseaudio-zeroconf picard inkscape audacity pidgin virtualbox-host-modules-arch virtualbox keepassx2"
+PACKAGE_EXT_APPS_GAMING="wine wine-mono wine_gecko steam"
+PACKAGE_EXT_APPS_GTK="easytag wireshark-gtk gtk-recordmydesktop openshot gcolor2 meld evolution"
+PACKAGE_EXT_APPS_QT="kid3 wireshark-qt"
+
+# external scripts
+sshcrypt_udhcp='#!/bin/sh
+NETMASK=""
+BROADCAST="broadcast +"
+
+[ -n "$broadcast" ] && BROADCAST="broadcast $broadcast"
+[ -n "$subnet" ] && NETMASK="/$subnet"
+
+case "$1" in
+  deconfig)
+    ip addr flush dev $interface
+  ;;
+
+  renew|bound)
+    ip addr add $ip$NETMASK $BROADCAST dev $interface
+  ;;
+esac'
+
+sshcrypt_install='#!/bin/bash
+build() {
+  local mod
+
+  add_module "dm-crypt"
+  if [[ $CRYPTO_MODULES ]]; then
+    for mod in $CRYPTO_MODULES; do
+      add_module "$mod"
+    done
+  else
+    add_all_modules "/crypto/"
+  fi
+
+  umask 0022
+  [ -d /etc/dropbear ] && mkdir -p /etc/dropbear
+
+  # build keys
+  if ! [ -f /etc/dropbear/dropbear_rsa_host_key ]; then
+    local keyfile keytype
+    for keytype in rsa dss ecdsa ; do
+      keyfile="/etc/dropbear/dropbear_${keytype}_host_key"
+      if [ ! -s "$keyfile" ]; then
+        echo "Generating ${keytype} host key for dropbear ..."
+        dropbearkey -t "${keytype}" -f "${keyfile}"
+      fi
+     done
+  fi
+
+  echo "root::0:0:root:/root:/bin/unlock" > "${BUILDROOT}"/etc/passwd
+  echo "/bin/unlock" > "${BUILDROOT}"/etc/shells
+  add_checked_modules "/drivers/net/"
+
+  add_binary "rm"
+  add_binary "killall"
+  add_binary "dropbear"
+  add_binary "dmsetup"
+  add_binary "cryptsetup"
+  add_binary "/usr/lib/libgcc_s.so.1"
+  add_binary "/etc/initcpio/udhcpc.script" "/udhcpc.script"
+
+  add_file "/usr/lib/udev/rules.d/10-dm.rules"
+  add_file "/usr/lib/udev/rules.d/13-dm-disk.rules"
+  add_file "/usr/lib/udev/rules.d/95-dm-notify.rules"
+  add_file "/usr/lib/initcpio/udev/11-dm-initramfs.rules" "/usr/lib/udev/rules.d/11-dm-initramfs.rules"
+  add_file "/lib/libnss_files.so.2"
+
+  add_dir "/var/run"
+  add_dir "/var/log"
+  add_full_dir "/etc/dropbear"
+
+  touch "${BUILDROOT}"/var/log/lastlog
+
+  add_runscript
+}'
+
+sshcrypt_hook='#!/bin/sh
+run_hook() {
+  modprobe -a -q dm-crypt >/dev/null 2>&1
+
+  # read cmdline
+  if [ -n "${cryptdevice}" ]; then
+    cryptdev=$(echo $cryptdevice | cut -d : -f 1)
+    cryptname=$(echo $cryptdevice | cut -d : -f 2)
+    cryptoptions=$(echo $cryptdevice | cut -d : -f 3)
+  fi
+
+  # resolve device
+  if resolved=$(resolve_device "${cryptdev}" ${rootdelay}); then
+    if cryptsetup isLuks ${resolved} >/dev/null 2>&1; then
+      touch /tmp/.nocrypt
+
+      # create unlock script
+      echo "#!/bin/sh -e" > /bin/unlock
+      echo "until cryptsetup open --type luks ${resolved} ${cryptname}; do" >> /bin/unlock
+      echo "  sleep" >> /bin/unlock
+      echo "done" >> /bin/unlock
+      echo "rm /tmp/.nocrypt" >> /bin/unlock
+      chmod +x "${BUILDROOT}"/bin/unlock
+
+      # start udhcpc
+      ip link set dev eth0 up
+      udhcpc -p /var/run/udhcpc.pid -s /udhcpc.script
+
+      # start dropbear
+      [ -d /dev/pts ] || mkdir -p /dev/pts
+      mount -t devpts devpts /dev/pts
+      dropbear -E -B -j -k -p 2222
+
+      until ! [ -f /tmp/.nocrypt ]; do sleep 1; done
+    fi
+  fi
+}
+
+run_cleanuphook () {
+  # stop dropbear
+  umount /dev/pts
+  rm -R /dev/pts
+  if [ -f /var/run/dropbear.pid ]; then
+    kill `cat /var/run/dropbear.pid`
+  fi
+
+  if [ -f /var/run/udhcpc.pid ]; then
+    kill `cat /var/run/udhcpc.pid`
+  fi
+}'
+
+matebookxorg='Section "Monitor"
+    Identifier "eDP-1"
+    Modeline "1920x1280_60.00" 206.25  1920 2056 2256 2592  1280 1283 1293 1327 -hsync +vsync
+    Modeline "2160x1440_60.00" 263.50 2160 2320 2552 2944 1440 1443 1453 1493 -hsync +vsync
+    Option "PreferredMode" "2160x1440_60.00"
+EndSection
+
+Section "Screen"
+    Identifier "Screen0"
+    Monitor "eDP-1"
+    DefaultDepth 24
+    SubSection "Display"
+        Modes "2160x1440_60.00"
+    EndSubSection
+EndSection
+
+Section "Device"
+    Identifier "Device0"
+    Driver "modesetting"
+EndSection'
+
+echo 'screen_color = (CYAN,BLACK,ON)' > ~/.dialogrc
 
 # clean previous install attempts
 umount -R /mnt &> /dev/null || true
-cryptsetup luksClose /dev/mapper/* &> /dev/null || true
+if [ -b /dev/mapper/lvm-system ]; then
+  vgchange -an lvm && sleep 2
+fi
 
+if [ -b /dev/mapper/cryptlvm ]; then
+  cryptsetup luksClose /dev/mapper/cryptlvm
+fi
+
+# KEYMAP
 KEYMAP=$(dialog --clear --title "Keymap" --inputbox "Please enter your keymap" 0 0 "" 3>&1 1>&2 2>&3)
 if test $? -eq 1; then exit 1; fi
 loadkeys $KEYMAP
 
-USERNAME=$(dialog --clear --title "Username" --inputbox "Please enter your username" 0 0 "" 3>&1 1>&2 2>&3)
-if test $? -eq 1; then exit 1; fi
-
-HOSTNAME=$(dialog --clear --title "Hostname" --inputbox "Please enter your hostname" 0 0 "" 3>&1 1>&2 2>&3)
-if test $? -eq 1; then exit 1; fi
-
-ROOTDEV=$(dialog --clear --title "Harddisk" --radiolist "Please select the target device" 0 0 0 \
-$(ls /dev/sd? /dev/mmcblk? /dev/nvme?n? -1 2> /dev/null | while read line; do
-echo "$line" "$line" on; done) 3>&1 1>&2 2>&3)
-if test $? -eq 1; then exit 1; fi
-
-if grep "mmcblk" <<< $ROOTDEV &> /dev/null; then
-  RDAPPEND=p
-fi
-
-if grep "nvme" <<< $ROOTDEV &> /dev/null; then
-  RDAPPEND=p
-fi
-
-if dialog --clear --title "UEFI" --yesno "Use UEFI Boot?" 0 0 3>&1 1>&2 2>&3; then
-  UEFI=y
-else
-  UEFI=n
-fi
-
-if dialog --clear --title "Reuse" --yesno "Do you want to reuse an existing installation?" 0 0 3>&1 1>&2 2>&3; then
-  WIPE=n
-else
-  WIPE=y
-fi
-
-DESKTOP=$(dialog --clear --title "Desktop" --radiolist "Please select your Desktop" 0 0 0 \
-  1 "MATE" on\
-  2 "KDE" off\
-  3 "GNOME" off\
-  4 "CINNAMON" off\
-  5 "XFCE" off\
-  6 "DEEPIN" off 3>&1 1>&2 2>&3)
-if test $? -eq 1; then exit 1; fi
-
-TWEAKS=$(dialog --clear --title "Tweaks" --checklist "Select Custom Tweaks" 0 0 0 \
- OPTIMUS "Install NVIDIA Hybrid Graphic Drivers" off\
- INTEL "Enable Latest Intel Graphic Options" off\
- NO_HIDPI "Disable HiDPI Scaling" off\
- FIX_PCI "Fix bad PCI Events (RazerBlade2017)" off\
- FIX_GPD "Fix Display Rotation (GPD Win)" off 3>&1 1>&2 2>&3)
-if test $? -eq 1; then exit 1; fi
-
-for item in $TWEAKS; do
-  if [ "$item" = "OPTIMUS" ]; then
-    OPTIMUS=y
-  elif [ "$item" = "INTEL" ]; then
-    INTEL=y
-  elif [ "$item" = "NO_HIDPI" ]; then
-    NO_HIDPI=y
-  elif [ "$item" = "FIX_PCI" ]; then
-    CUSTOM_CMDLINE="pci=noaer button.lid_init_state=open"
-  elif [ "$item" == "FIX_GPD" ]; then
-    CUSTOM_CMDLINE="$CUSTOM_CMDLINE fbcon=rotate:1 dmi_product_name=GPD-WINI55"
+# WIFI
+if iwconfig | grep IEEE &> /dev/null; then
+  if dialog --clear --title "WiFi" --yesno "Connect to WiFi?" 0 0 3>&1 1>&2 2>&3; then
+    wifi-menu
   fi
-done
+fi
 
+# MIRROR
 if dialog --clear --title "Mirror" --yesno "Select a mirror?" 0 0 3>&1 1>&2 2>&3; then
   vim /etc/pacman.d/mirrorlist
 fi
 
-while ! [ "$USERPW" = "$USERPW2" ] || [ -z "$USERPW" ]; do
-  USERPW=$(dialog --clear --title "User Password" --insecure --passwordbox "Enter your user password" 0 0 3>&1 1>&2 2>&3)
-  if test $? -eq 1; then exit 1; fi
-  USERPW2=$(dialog --clear --title "User Password" --insecure --passwordbox "Repeat your user password" 0 0 3>&1 1>&2 2>&3)
-  if test $? -eq 1; then exit 1; fi
-done
+# ROOTDEV
+ROOTDEV=$(dialog --clear --title "Harddisk" --radiolist "Please select the target device" 0 0 0 \
+$(ls /dev/sd? /dev/mmcblk? /dev/nvme?n? -1 2> /dev/null | while read line; do
+echo "$line" "$line" on; done) 3>&1 1>&2 2>&3)
+if test $? -eq 1; then exit 1; fi
+if grep -q "mmcblk" <<< $ROOTDEV || grep -q "nvme" <<< $ROOTDEV; then
+  RDAPPEND=p
+fi
+
+# UEFI
+if dialog --clear --title "UEFI" --yesno "Use UEFI Boot?" 0 0 3>&1 1>&2 2>&3; then
+  UEFI=y
+  PACKAGES="$PACKAGES efibootmgr"
+else
+  UEFI=n
+  PACKAGES="$PACKAGES grub"
+fi
 
 while ! [ "$DISKPW" = "$DISKPW2" ] || [ -z "$DISKPW" ]; do
   DISKPW=$(dialog --clear --title "Disk Encryption" --insecure --passwordbox "Enter your disk encryption password" 0 0 3>&1 1>&2 2>&3)
@@ -92,164 +231,307 @@ while ! [ "$DISKPW" = "$DISKPW2" ] || [ -z "$DISKPW" ]; do
   if test $? -eq 1; then exit 1; fi
 done
 
-INSTALL_OPTIMUS="bumblebee mesa lib32-virtualgl nvidia lib32-nvidia-utils primus lib32-primus bbswitch"
-INSTALL_BASE="vim openssh wget htop ncdu screen zsh net-tools unp debootstrap unrar unzip p7zip rfkill bind-tools rsnapshot lxc php php-gd lua mariadb-clients libmariadbclient"
+# try to unlock previous installation
+progress "Trying to unlock disks..."
+echo -n "${DISKPW}" | cryptsetup luksOpen ${ROOTDEV}${RDAPPEND}2 cryptlvm -d - &> /dev/tty2
+vgchange -ay &> /dev/tty2
+sleep 2
 
-INSTALL_DESKTOP="mpv youtube-dl git fuseiso atom chromium firefox vlc ffmpeg gimp blender owncloud-client wine wine-mono wine_gecko steam libreoffice ttf-liberation ttf-ubuntu-font-family ttf-droid ttf-dejavu ttf-freefont noto-fonts-emoji alsa-utils samba lib32-libpulse gst-plugins-ugly gst-plugins-bad gst-libav android-tools pulseaudio-zeroconf noto-fonts picard inkscape audacity pidgin virtualbox virtualbox-host-modules-arch keepassx2"
+if ! [ -b /dev/mapper/lvm-system ]; then
+  WIPE=y
+else
+  WIPE=n
+fi
 
-INSTALL_DESKTOP_GTK="easytag wireshark-gtk gtk-recordmydesktop openshot gcolor2 meld paprefs evolution qt5-styleplugins"
-INSTALL_DESKTOP_QT="kid3 wireshark-qt qt5"
+if [ "$WIPE" = "n" ]; then
+  if ! dialog --clear --title "Reuse" --yesno "Do you want to reuse the existing installation?" 0 0 3>&1 1>&2 2>&3; then
+    WIPE=y
+  fi
+fi
 
-# Setup Variables
+if [ "$WIPE" = "y" ]; then
+  # close active installation
+  progress "Reload disks..."
+  vchange -an lvm &> /dev/tty2
+  cryptsetup luksClose cryptlvm &> /dev/tty2
+
+  ROOTFS_SIZE=$(dialog --clear --title "Rootfs Size" --inputbox "Please enter the desired size of the root partition" 0 0 "50G" 3>&1 1>&2 2>&3)
+  if test $? -eq 1; then exit 1; fi
+fi
+
+DESKTOP=$(dialog --clear --title "Desktop Selection" --radiolist "Please select your Desktop" 0 0 0 \
+  1 "GNOME Desktop" on\
+  2 "KDE Plasma Desktop" off\
+  3 "MATE Desktop" off\
+  4 "Cinnamon Desktop" off\
+  5 "Xfce Desktop" off\
+  6 "Deepin Desktop Environment" off\
+  7 "No Desktop" off\
+  8 "Headless (Remote)" off 3>&1 1>&2 2>&3)
+if test $? -eq 1; then exit 1; fi
+
 case $DESKTOP in
   "1")
-    DESKTOP="MATE"
-    DESKTOP_APPS="mate mate-extra lightdm-gtk-greeter-settings networkmanager pulseaudio network-manager-applet blueman gvfs-smb gvfs-mtp"
-    DESKTOP_DM="lightdm"
-    DESKTOP_MISC="${INSTALL_DESKTOP_GTK} totem gnome-keyring awesome  wireshark-gtk"
+    DESKTOP="GNOME"
+    PACKAGES="$PACKAGES $PACKAGE_DESKTOP $PACKAGE_DESKTOP_GTK $PACKAGE_DESKTOP_GNOME $PACKAGE_DESKTOP_GNOME_DM"
+    SYSTEMD="$SYSTEMD $SYSTEMD_DESKTOP $PACKAGE_DESKTOP_GNOME_DM"
+    UGROUPS="$UGROUPS $PACKAGE_DESKTOP_GNOME_DM"
+    EXT_APPS_GTK="on"
+    EXT_APPS_QT="off"
   ;;
   "2")
     DESKTOP="KDE"
-    DESKTOP_APPS="plasma kde-applications"
-    DESKTOP_DM="sddm"
-    DESKTOP_THEME="materia-kde materia-gtk-theme kvantum-theme-materia papirus-icon-theme"
-    DESKTOP_TWEAKS="libdbusmenu-{qt4,qt5,gtk2,gtk3} lib32-libdbusmenu-{glib,gtk2,gtk3} appmenu-gtk-module appmenu-qt4 plasma5-applets-active-window-control"
-    DESKTOP_MISC="${INSTALL_DESKTOP_QT} ${DESKTOP_TWEAKS} ${DESKTOP_THEME}"
+    PACKAGES="$PACKAGES $PACKAGE_DESKTOP $PACKAGE_DESKTOP_QT $PACKAGE_DESKTOP_KDE $PACKAGE_DESKTOP_KDE_DM"
+    SYSTEMD="$SYSTEMD $SYSTEMD_DESKTOP $PACKAGE_DESKTOP_KDE_DM"
+    UGROUPS="$UGROUPS $PACKAGE_DESKTOP_KDE_DM"
+    EXT_APPS_GTK="off"
+    EXT_APPS_QT="on"
   ;;
   "3")
-    DESKTOP="GNOME"
-    DESKTOP_APPS="gnome gnome-extra chrome-gnome-shell flatpak-builder networkmanager"
-    DESKTOP_DM="gdm"
-    DESKTOP_MISC="${INSTALL_DESKTOP_GTK}"
+    DESKTOP="MATE"
+    PACKAGES="$PACKAGES $PACKAGE_DESKTOP $PACKAGE_DESKTOP_GTK $PACKAGE_DESKTOP_MATE $PACKAGE_DESKTOP_MATE_DM"
+    SYSTEMD="$SYSTEMD $SYSTEMD_DESKTOP $PACKAGE_DESKTOP_MATE_DM"
+    UGROUPS="$UGROUPS $PACKAGE_DESKTOP_MATE_DM"
+    EXT_APPS_GTK="on"
+    EXT_APPS_QT="off"
   ;;
   "4")
     DESKTOP="CINNAMON"
-    DESKTOP_APPS="gnome gnome-extra networkmanager cinnamon nemo"
-    DESKTOP_DM="gdm"
-    DESKTOP_MISC="${INSTALL_DESKTOP_GTK}"
+    PACKAGES="$PACKAGES $PACKAGE_DESKTOP $PACKAGE_DESKTOP_GTK $PACKAGE_DESKTOP_CINNAMON $PACKAGE_DESKTOP_CINNAMON_DM"
+    SYSTEMD="$SYSTEMD $SYSTEMD_DESKTOP $PACKAGE_DESKTOP_CINNAMON_DM"
+    UGROUPS="$UGROUPS $PACKAGE_DESKTOP_CINNAMON_DM"
+    EXT_APPS_GTK="on"
+    EXT_APPS_QT="off"
   ;;
   "5")
     DESKTOP="XFCE"
-    DESKTOP_APPS="xfce4 xfce4-goodies lightdm-gtk-greeter-settings networkmanager pulseaudio network-manager-applet blueman gvfs-smb gvfs-mtp"
-    DESKTOP_DM="lightdm"
-    DESKTOP_MISC="${INSTALL_DESKTOP_GTK} totem gnome-keyring awesome  wireshark-gtk"
+    PACKAGES="$PACKAGES $PACKAGE_DESKTOP $PACKAGE_DESKTOP_GTK $PACKAGE_DESKTOP_XFCE $PACKAGE_DESKTOP_XFCE_DM"
+    SYSTEMD="$SYSTEMD $SYSTEMD_DESKTOP $PACKAGE_DESKTOP_XFCE_DM"
+    UGROUPS="$UGROUPS $PACKAGE_DESKTOP_XFCE_DM"
+    EXT_APPS_GTK="on"
+    EXT_APPS_QT="off"
   ;;
   "6")
     DESKTOP="DEEPIN"
-    DESKTOP_APPS="deepin deepin-extra networkmanager"
-    DESKTOP_DM="lightdm"
-    DESKTOP_MISC="${INSTALL_DESKTOP_GTK} gedit gtk-engine-murrine iw redshift zssh gvfs-smb gvfs-mtp gvfs-goa gvfs-afc"
+    PACKAGES="$PACKAGES $PACKAGE_DESKTOP $PACKAGE_DESKTOP_GTK $PACKAGE_DESKTOP_QT $PACKAGE_DESKTOP_DEEPIN $PACKAGE_DESKTOP_DEEPIN_DM"
+    SYSTEMD="$SYSTEMD $SYSTEMD_DESKTOP $PACKAGE_DESKTOP_DEEPIN_DM"
+    UGROUPS="$UGROUPS $PACKAGE_DESKTOP_DEEPIN_DM"
+    EXT_APPS_GTK="off"
+    EXT_APPS_QT="on"
+  ;;
+  "7")
+    DESKTOP="MINIMAL"
+    EXT_APPS_GTK="off"
+    EXT_APPS_QT="off"
+  ;;
+  "8")
+    DESKTOP="HEADLESS"
+    PACKAGES="dropbear dhcpcd $PACKAGES"
+    SYSTEMD="$SYSTEMD sshd dhcpcd@eth0"
+    EXT_APPS_GTK="off"
+    EXT_APPS_QT="off"
   ;;
 esac
 
-cat > /tmp/install-summary.log << EOF
-Simple Arch Linux Installer
-===========================
+if [ "$DESKTOP" = "MINIMAL" ] || [ "$DESKTOP" = "HEADLESS" ]; then
+  HAS_DESKTOP=off
+else
+  HAS_DESKTOP=on
+fi
 
-Username: $USERNAME
-Hostname: $HOSTNAME
-
-Device: $ROOTDEV
-Wipe: $WIPE
-
-Desktop: $DESKTOP
-Display Manager: $DESKTOP_DM
-
-Packages
-========
-
-$INSTALL_BASE
-$INSTALL_DESKTOP
-$DESKTOP_MISC
-$DESKTOP_APPS
-$INSTALL_OPTIMUS
-
-Hit Ctrl-C to abort, Return to continue ...
-EOF
-dialog --clear --title "Summary" --textbox /tmp/install-summary.log 0 0 3>&1 1>&2 2>&3
+EXT_PACKAGES=$(dialog --clear --title "Additional Software" --checklist "Select Additional Software" 0 0 0 \
+  EXT_FONTS "Fonts" $HAS_DESKTOP\
+  EXT_CODECS "Codecs" $HAS_DESKTOP\
+  EXT_CONSOLE "Console Applications" on\
+  EXT_APPS "Desktop Applications" $HAS_DESKTOP\
+  EXT_APPS_GAMING "Desktop Gaming Applications" $HAS_DESKTOP\
+  EXT_APPS_GTK "Desktop GTK Applications" $EXT_APPS_GTK\
+  EXT_APPS_QT "Desktop Qt Applications" $EXT_APPS_QT 3>&1 1>&2 2>&3)
 if test $? -eq 1; then exit 1; fi
 
-progress "Setting Up Disk" 0
+for item in $EXT_PACKAGES; do
+  if [ "$item" = "EXT_FONTS" ]; then
+    PACKAGES="$PACKAGES $PACKAGE_EXT_FONTS"
+  elif [ "$item" = "EXT_CODECS" ]; then
+    PACKAGES="$PACKAGES $PACKAGE_EXT_CODECS"
+  elif [ "$item" = "EXT_CONSOLE" ]; then
+    PACKAGES="$PACKAGES $PACKAGE_EXT_CONSOLE"
+  elif [ "$item" = "EXT_APPS" ]; then
+    PACKAGES="$PACKAGES $PACKAGE_EXT_APPS"
+    UGROUPS="$UGROUPS vboxusers"
+  elif [ "$item" = "EXT_APPS_GAMING" ]; then
+    PACKAGES="$PACKAGES $PACKAGE_EXT_APPS_GAMING"
+  elif [ "$item" = "EXT_APPS_GTK" ]; then
+    PACKAGES="$PACKAGES $PACKAGE_EXT_APPS_GTK"
+  elif [ "$item" = "EXT_APPS_QT" ]; then
+    PACKAGES="$PACKAGES $PACKAGE_EXT_APPS_QT"
+  fi
+done
+
+if lspci | grep -i "3d\|video\|vga" | grep -iq intel; then
+  HAS_INTEL=on
+else
+  HAS_INTEL=off
+fi
+
+if lspci | grep -i "3d\|video\|vga" | grep -iq nvidia; then
+  HAS_NVIDIA=on
+else
+  HAS_NVIDIA=off
+fi
+
+if [ "$HAS_INTEL" = "on" ] && [ "$HAS_NVIDIA" = "on" ]; then
+  HAS_OPTIMUS=on
+else
+  HAS_OPTIMUS=off
+fi
+
+if [ "$(cat /sys/class/graphics/fb0/virtual_size)" = "3000,2000" ]; then
+  MATEBOOK=on
+else
+  MATEBOOK=off
+fi
+
+TWEAKS=$(dialog --clear --title "Tweaks" --checklist "Select Custom Tweaks" 0 0 0 \
+  NO_HIDPI "Disable HiDPI Scaling" on\
+  OPTIMUS "NVIDIA Hybrid Graphics" $HAS_OPTIMUS\
+  INTEL "Latest Intel Graphic Tweaks" $HAS_INTEL\
+  FIX_GPD "Hardware: GPD Win" off\
+  FIX_MATEBOOK "Hardware: Huawei Matebook X Pro" $MATEBOOK 3>&1 1>&2 2>&3)
+if test $? -eq 1; then exit 1; fi
+
+for item in $TWEAKS; do
+  if [ "$item" = "OPTIMUS" ]; then
+    PACKAGES="$PACKAGES $PACKAGE_EXT_OPTIMUS"
+    SYSTEMD="$SYSTEMD bumblebeed"
+    UGROUPS="$UGROUPS bumblebee"
+  elif [ "$item" = "INTEL" ]; then
+    INTEL=y
+  elif [ "$item" = "NO_HIDPI" ]; then
+    NO_HIDPI=y
+  elif [ "$item" == "FIX_GPD" ]; then
+    CUSTOM_CMDLINE="$CUSTOM_CMDLINE fbcon=rotate:1 dmi_product_name=GPD-WINI55"
+  elif [ "$item" == "FIX_MATEBOOK" ]; then
+    FIX_MATEBOOK=y
+  fi
+done
+
+HOSTNAME=$(dialog --clear --title "Hostname" --inputbox "Please enter your hostname" 0 0 "" 3>&1 1>&2 2>&3)
+if test $? -eq 1; then exit 1; fi
+
+USERNAME=$(dialog --clear --title "Username" --inputbox "Please enter your username" 0 0 "" 3>&1 1>&2 2>&3)
+if test $? -eq 1; then exit 1; fi
+
+while ! [ "$USERPW" = "$USERPW2" ] || [ -z "$USERPW" ]; do
+  USERPW=$(dialog --clear --title "User Password" --insecure --passwordbox "Enter your user password" 0 0 3>&1 1>&2 2>&3)
+  if test $? -eq 1; then exit 1; fi
+  USERPW2=$(dialog --clear --title "User Password" --insecure --passwordbox "Repeat your user password" 0 0 3>&1 1>&2 2>&3)
+  if test $? -eq 1; then exit 1; fi
+done
+
 if [ "$WIPE" = "y" ]; then
-  progress "Deleting MBR Record" 1
-  dd if=/dev/zero of=${ROOTDEV} bs=4M conv=fsync count=1
+  cryptsize=$(parted <<<'unit MB print all' | grep ${ROOTDEV} | cut -d " " -f 3)
+  echo "\Z1WARNING: All data on '$ROOTDEV' will be deleted!\Zn" > /tmp/install-summary.log
+  echo "" >> /tmp/install-summary.log
+  echo "${ROOTDEV}" >> /tmp/install-summary.log
+  echo "\Zb - ${ROOTDEV}${RDAPPEND}1 - Boot (512M)\Zn" >> /tmp/install-summary.log
+  echo "\Zb - ${ROOTDEV}${RDAPPEND}2 - Encrypted LVM\Zn" >> /tmp/install-summary.log
+  echo "" >> /tmp/install-summary.log
+  echo "Encrypted LVM" >> /tmp/install-summary.log
+  echo "\Zb - lvm-system ($ROOTFS_SIZE)\Zn" >> /tmp/install-summary.log
+  echo "\Zb - lvm-home\Zn" >> /tmp/install-summary.log
+else
+  echo "\Z1WARNING: '/boot' ($ROOTDEV${RDAPPEND}1) and 'lvm-system' will be deleted!\Zn" > /tmp/install-summary.log
+  echo "" >> /tmp/install-summary.log
+  echo "${ROOTDEV}" >> /tmp/install-summary.log
+  echo "\Zb - ${ROOTDEV}${RDAPPEND}1 - Boot (format)\Zn" >> /tmp/install-summary.log
+  echo "\Zb - ${ROOTDEV}${RDAPPEND}2 - Encrypted LVM (keep)\Zn" >> /tmp/install-summary.log
+  echo "" >> /tmp/install-summary.log
+  echo "Encrypted LVM" >> /tmp/install-summary.log
+  echo "\Zb - lvm-system (format)\Zn" >> /tmp/install-summary.log
+  echo "\Zb - lvm-home (keep)\Zn" >> /tmp/install-summary.log
+fi
+
+echo "" >> /tmp/install-summary.log
+echo "Profile: \Zb$DESKTOP\Zn" >> /tmp/install-summary.log
+echo "" >> /tmp/install-summary.log
+echo "User: \Zb$USERNAME\Zn" >> /tmp/install-summary.log
+echo "Keymap: \Zb$KEYMAP\Zn" >> /tmp/install-summary.log
+echo "Hostname: \Zb$HOSTNAME\Zn" >> /tmp/install-summary.log
+echo "" >> /tmp/install-summary.log
+echo "Packages: \Zb$PACKAGES\Zn" >> /tmp/install-summary.log
+echo "" >> /tmp/install-summary.log
+echo "Do you want to continue?" >> /tmp/install-summary.log
+
+if ! dialog --clear --title "Summary" --colors --yesno "$(cat /tmp/install-summary.log)" 0 0 3>&1 1>&2 2>&3; then
+  exit 1
+fi
+
+progress "Setting Up ${ROOTDEV}..."
+if [ "$WIPE" = "y" ]; then
+  dd if=/dev/zero of=${ROOTDEV} bs=4M conv=fsync count=1 &> /dev/tty2
 
   if [ "$UEFI" = "y" ]; then
-    progress "Create GPT Partitiontable" 2
     parted ${ROOTDEV} -s mklabel gpt &> /dev/tty2
-    progress "Create Boot Partition" 3
     parted ${ROOTDEV} -s mkpart ESP fat32 1MiB 513MiB &> /dev/tty2
     parted ${ROOTDEV} -s set 1 boot on &> /dev/tty2
-    progress "Formatting Boot Partition as FAT32" 4
+    parted ${ROOTDEV} -s mkpart primary 513MiB 100% &> /dev/tty2
+
+    progress "Setting Up ${ROOTDEV}${RDAPPEND}1..."
     mkfs.fat -F 32 -n EFIBOOT ${ROOTDEV}${RDAPPEND}1 &> /dev/tty2
   else
-    progress "Create MSDOS Partitiontable" 2
     parted ${ROOTDEV} -s mklabel msdos &> /dev/tty2
-    progress "Create Boot Partition" 3
     parted ${ROOTDEV} -s mkpart primary 1MiB 513MiB &> /dev/tty2
     parted ${ROOTDEV} -s set 1 boot on &> /dev/tty2
-    progress "Formatting Boot Partition as EXT4" 4
+    parted ${ROOTDEV} -s mkpart primary 513MiB 100% &> /dev/tty2
+
+    progress "Setting Up ${ROOTDEV}${RDAPPEND}1..."
     mkfs.ext4 -F ${ROOTDEV}${RDAPPEND}1 -L boot &> /dev/tty2
   fi
 
-  progress "Create System Partition" 5
-  parted ${ROOTDEV} -s mkpart primary 513MiB 100% &> /dev/tty2
-
-  progress "Create DM-Crypt Container" 6
+  progress "Setting Up ${ROOTDEV}${RDAPPEND}2..."
   echo -n "${DISKPW}" | cryptsetup -c aes-xts-plain64 -s 512 luksFormat ${ROOTDEV}${RDAPPEND}2 - &> /dev/tty2
   echo -n "${DISKPW}" | cryptsetup luksOpen ${ROOTDEV}${RDAPPEND}2 cryptlvm -d - &> /dev/tty2
 
-  progress "Setup LVM Volumes" 7
+  progress "Setting Up ${ROOTDEV}${RDAPPEND}2 (lvm)..."
   pvcreate /dev/mapper/cryptlvm &> /dev/tty2
   vgcreate lvm /dev/mapper/cryptlvm &> /dev/tty2
-  lvcreate -L 50G lvm -n system &> /dev/tty2
+  lvcreate -L ${ROOTFS_SIZE} lvm -n system &> /dev/tty2
   lvcreate -l 100%FREE lvm -n home &> /dev/tty2
 
-  progress "Formatting Root Partition as EXT4" 8
+  progress "Setting Up ${ROOTDEV}${RDAPPEND}2 (lvm-system)..."
   mkfs.ext4 -F /dev/mapper/lvm-system -L system &> /dev/tty2
 
-  progress "Formatting Home Partition as EXT4" 9
+  progress "Setting Up ${ROOTDEV}${RDAPPEND}2 (lvm-home)..."
   mkfs.ext4 -F /dev/mapper/lvm-home -L home &> /dev/tty2
 else
+  progress "Setting Up ${ROOTDEV}${RDAPPEND}1..."
   if [ "$UEFI" = "y" ]; then
-    progress "Formatting Boot Partition as FAT32" 2
     mkfs.fat -F 32 -n EFIBOOT ${ROOTDEV}${RDAPPEND}1 &> /dev/tty2
   else
-    progress "Formatting Boot Partition as EXT4" 4
     mkfs.ext4 -F ${ROOTDEV}${RDAPPEND}1 -L boot &> /dev/tty2
   fi
 
-  progress "Unlocking DM-Crypt Container" 6
-  if ! echo -n "${DISKPW}" | cryptsetup luksOpen ${ROOTDEV}${RDAPPEND}2 cryptlvm -d - ; then
-    cryptsetup luksOpen ${ROOTDEV}${RDAPPEND}2 cryptlvm || exit 1 &> /dev/tty2
-  fi
-
-  progress "Load LVM Volumes" 8
-  vgchange -ay &> /dev/tty2
-  sleep 1
-
-  progress "Formatting Root Partition as EXT4" 9
+  progress "Setting Up ${ROOTDEV}${RDAPPEND}2 (lvm-system)..."
   mkfs.ext4 -F /dev/mapper/lvm-system -L system &> /dev/tty2
 fi
 
-progress "Mounting /root to /mnt" 10
+progress "Mount Partitions..."
 mount /dev/mapper/lvm-system /mnt &> /dev/tty2
 
-progress "Mounting /boot to /mnt/boot" 15
 mkdir /mnt/boot &> /dev/tty2
 mount ${ROOTDEV}${RDAPPEND}1 /mnt/boot &> /dev/tty2
 
-progress "Mounting /home to /mnt/home" 20
 mkdir /mnt/home &> /dev/tty2
 mount /dev/mapper/lvm-home /mnt/home &> /dev/tty2
 
-progress "Installing Target: Base System" 25
+progress "Install Base System..."
 sed -i "s/#Color/Color/" /etc/pacman.conf &> /dev/tty2
 while ! pacstrap /mnt base &> /dev/tty2; do
   echo "Failed: repeating" &> /dev/tty2
 done
 
-progress "Configure Base System" 30
+progress "Configure Base System..."
 genfstab -p /mnt > /mnt/etc/fstab
 
 cat > /mnt/etc/locale.gen << EOF
@@ -272,42 +554,58 @@ echo $HOSTNAME > /mnt/etc/hostname
 sed -i "s/#Color/Color/" /mnt/etc/pacman.conf &> /dev/tty2
 sed -i '/#\[multilib\]/,/#Include = \/etc\/pacman.d\/mirrorlist/ s/#//' /mnt/etc/pacman.conf &> /dev/tty2
 
-sed -i "s/block filesystems/block keymap encrypt lvm2 filesystems/" /mnt/etc/mkinitcpio.conf &> /dev/tty2
-sed -i "s/MODULES=\"\"/MODULES=\"i915\"/" /mnt/etc/mkinitcpio.conf &> /dev/tty2
+if [ "$INTEL" = "y" ]; then
+  echo "options i915 enable_guc=3" >> /mnt/etc/modprobe.d/i915.conf
+  echo "options i915 enable_fbc=1" >> /mnt/etc/modprobe.d/i915.conf
+  echo "options i915 fastboot=1" >> /mnt/etc/modprobe.d/i915.conf
+  sed -i "s/MODULES=\"\"/MODULES=\"i915\"/" /mnt/etc/mkinitcpio.conf &> /dev/tty2
+fi
 
-progress "Generating Locales" 35
+if [ "$NO_HIDPI" = "y" ]; then
+  echo "GDK_SCALE=1" >> /mnt/etc/environment
+  echo "GDK_DPI_SCALE=1" >> /mnt/etc/environment
+  echo "QT_SCALE_FACTOR=1" >> /mnt/etc/environment
+  echo "QT_AUTO_SCREEN_SCALE_FACTOR=0" >> /mnt/etc/environment
+fi
+
+if [ "${DESKTOP}" = "HEADLESS" ]; then
+  # use remote encrypt unlocker
+  echo "$sshcrypt_install" > /mnt/etc/initcpio/install/sshcrypt
+  echo "$sshcrypt_hook" > /mnt/etc/initcpio/hooks/sshcrypt
+  echo "$sshcrypt_udhcp" > /mnt/etc/initcpio/udhcpc.script
+  chmod +x /mnt/etc/initcpio/udhcpc.script
+  sed -i "s/block filesystems/block keymap sshcrypt lvm2 filesystems/" /mnt/etc/mkinitcpio.conf &> /dev/tty2
+else
+  # use default encrypt hook
+  sed -i "s/block filesystems/block keymap encrypt lvm2 filesystems/" /mnt/etc/mkinitcpio.conf &> /dev/tty2
+fi
+
+ln -s /dev/null /mnt/etc/udev/rules.d/80-net-setup-link.rules &> /dev/tty2
+
 arch-chroot /mnt /bin/bash -c "locale-gen" &> /dev/tty2
 
-progress "Installing Target: Updates" 40
-arch-chroot /mnt /bin/bash -c "while ! pacman -Syu --noconfirm; do echo repeat...; done" &> /dev/tty2
+progress "Update Package List..."
+arch-chroot /mnt /bin/bash -c "while ! pacman -Sy; do echo repeat...; done" &> /dev/tty2
 
-progress "Installing Target: Base Utils" 45
-arch-chroot /mnt /bin/bash -c "while ! pacman -S --noconfirm base-devel cmake linux-headers ${INSTALL_BASE}; do echo repeat...; done" &> /dev/tty2
+ID=0
+MAX=$(echo $PACKAGES | wc -w)
+for package in $PACKAGES; do
+  ID=$(expr $ID + 1)
+  PERC=$(expr $ID \* 100 / $MAX)
 
-progress "Installing Target: Boot" 50
-arch-chroot /mnt /bin/bash -c "while ! pacman -S --noconfirm dosfstools gptfdisk grub efibootmgr intel-ucode; do echo repeat...; done" &> /dev/tty2
+  echo $PERC | dialog --gauge "Install Packages: '$package'" 7 100 0
+  arch-chroot /mnt /bin/bash -c "while ! pacman -S --noconfirm --needed $package; do echo repeat...; done" | while read line; do
+    echo "$line" &> /dev/tty2
+    if grep -q "^::" <<< $line; then
+      echo $PERC | dialog --gauge "Install Packages: '$package'\n$(sed 's/^:: //g' <<< $line)" 7 100 0
+    fi
+  done
+done
 
-progress "Installing Target: Desktop ($DESKTOP)" 55
-arch-chroot /mnt /bin/bash -c "while ! pacman -S --noconfirm xorg xorg-apps xf86-input-evdev xf86-input-synaptics ${DESKTOP_APPS}; do echo repeat...; done" &> /dev/tty2
+progress "Configure Desktop..."
 
-progress "Installing Target: Applications" 60
-arch-chroot /mnt /bin/bash -c "while ! pacman -S --noconfirm ${INSTALL_DESKTOP} ${DESKTOP_MISC}; do echo repeat...; done" &> /dev/tty2
-
-if [ "${OPTIMUS}" = "y" ]; then
-  progress "Installing Target: Optimus Drivers" 65
-  arch-chroot /mnt /bin/bash -c "while ! pacman -S --noconfirm ${INSTALL_OPTIMUS}; do echo repeat...; done" &> /dev/tty2
-fi
-
-progress "Configuring Desktop" 70
-# disable wine filetype associations
-sed "s/-a //g" -i /mnt/usr/share/wine/wine.inf &> /dev/tty2
-
-if ! [ "$DESKTOP" = "KDE" ]; then
-  echo "QT_QPA_PLATFORMTHEME=gtk2" >> /mnt/etc/environment
-  echo "QT_STYLE_OVERRIDE=gtk" >> /mnt/etc/environment
-fi
-
-if [ "$DESKTOP" = "KDE" ]; then
+case $DESKTOP in
+"KDE")
   cat > /mnt/etc/sddm.conf << EOF
 [Autologin]
 Relogin=false
@@ -326,31 +624,30 @@ CursorTheme=breeze_cursors
 MaximumUid=65000
 MinimumUid=1000
 EOF
-fi
-
-if [ "$DESKTOP" = "DEEPIN" ]; then
+  ;;
+"DEEPIN")
   sed -i "s/#greeter-session=.*/greeter-session=lightdm-deepin-greeter/" /mnt/etc/lightdm/lightdm.conf &> /dev/tty2
+  ;;
+*)
+  echo "QT_QPA_PLATFORMTHEME=gtk2" >> /mnt/etc/environment
+  echo "QT_STYLE_OVERRIDE=gtk" >> /mnt/etc/environment
+  ;;
+esac
+
+if [ "$FIX_MATEBOOK" = "y" ]; then
+  mkdir -p /mnt/etc/X11/xorg.conf.d/
+  echo "$matebookxorg" > /mnt/etc/X11/xorg.conf.d/20-monitor.conf
 fi
 
-progress "Configuring Hardware Settings" 71
-if [ "$INTEL" = "y" ]; then
-  echo "options i915 enable_guc=3" >> /mnt/etc/modprobe.d/i915.conf
-  echo "options i915 enable_fbc=1" >> /mnt/etc/modprobe.d/i915.conf
-  echo "options i915 fastboot=1" >> /mnt/etc/modprobe.d/i915.conf
+if echo "$PACKAGES" | grep -q " wine "; then
+  # disable wine filetype associations
+  sed "s/-a //g" -i /mnt/usr/share/wine/wine.inf &> /dev/tty2
 fi
 
-if [ "$NO_HIDPI" = "y" ]; then
-  echo "GDK_SCALE=1" >> /mnt/etc/environment
-  echo "GDK_DPI_SCALE=1" >> /mnt/etc/environment
-  echo "QT_SCALE_FACTOR=1" >> /mnt/etc/environment
-  echo "QT_AUTO_SCREEN_SCALE_FACTOR=0" >> /mnt/etc/environment
-fi
-
-progress "Rebuild Initramfs" 75
+progress "Install Bootloader..."
 arch-chroot /mnt /bin/bash -c "mkinitcpio -p linux" &> /dev/tty2
 
 if [ "$UEFI" = "y" ]; then
-  progress "Installing systemd-boot to ${ROOTDEV}${RDAPPEND}1" 80
   arch-chroot /mnt /bin/bash -c "bootctl --path=/boot install" &> /dev/tty2
   echo "title   Arch Linux" > /mnt/boot/loader/entries/arch.conf
   echo "linux   /vmlinuz-linux" >> /mnt/boot/loader/entries/arch.conf
@@ -358,8 +655,6 @@ if [ "$UEFI" = "y" ]; then
   echo "initrd  /initramfs-linux.img" >> /mnt/boot/loader/entries/arch.conf
   echo "options root=/dev/mapper/lvm-system rw cryptdevice=${ROOTDEV}${RDAPPEND}2:cryptlvm quiet" >> /mnt/boot/loader/entries/arch.conf
 else
-  progress "Installing GRUB Bootloader to ${ROOTDEV}${RDAPPEND}1" 80
-  arch-chroot /mnt /bin/bash -c "while ! pacman -S --noconfirm grub efibootmgr intel-ucode; do echo repeat...; done" &> /dev/tty2
   sed -i "s|GRUB_CMDLINE_LINUX=\"\"|GRUB_CMDLINE_LINUX=\"cryptdevice=${ROOTDEV}${RDAPPEND}2:cryptlvm ${CUSTOM_CMDLINE}\"|" /mnt/etc/default/grub &> /dev/tty2
   sed -i "s/GRUB_TIMEOUT=5/GRUB_TIMEOUT=3/" /mnt/etc/default/grub &> /dev/tty2
   sed -i "s/GRUB_GFXMODE=auto/GRUB_GFXMODE=1920x1080,auto/" /mnt/etc/default/grub &> /dev/tty2
@@ -367,13 +662,12 @@ else
   arch-chroot /mnt /bin/bash -c "grub-mkconfig -o /boot/grub/grub.cfg" &> /dev/tty2
 fi
 
-
-progress "Setting up User: ${USERNAME}" 85
+progress "Create User..."
 echo "${USERNAME} ALL=(ALL) ALL" >> /mnt/etc/sudoers
 arch-chroot /mnt /bin/bash -c "useradd -m ${USERNAME}" &> /dev/tty2
-arch-chroot /mnt /bin/bash -c "usermod -a -G audio,video,storage,optical,network,users,wheel,games,rfkill,scanner,power,lp,vboxusers ${USERNAME}" &> /dev/tty2
-arch-chroot /mnt /bin/bash -c "gpasswd -a ${USERNAME} bumblebee" &> /dev/tty2
-arch-chroot /mnt /bin/bash -c "gpasswd -a ${USERNAME} ${DESKTOP_DM}" &> /dev/tty2
+for group in $UGROUPS; do
+  arch-chroot /mnt /bin/bash -c "gpasswd -a ${USERNAME} ${group}" &> /dev/tty2
+done
 
 arch-chroot /mnt /bin/bash -c "echo \"${USERNAME}:${USERPW}\" | chpasswd" &> /dev/tty2
 arch-chroot /mnt /bin/bash -c "echo \"root:${USERPW}\" | chpasswd" &> /dev/tty2
@@ -382,16 +676,12 @@ ln -s /home/${USERNAME}/.bashrc /mnt/root/.bashrc &> /dev/tty2
 ln -s /home/${USERNAME}/.zshrc /mnt/root/.zshrc &> /dev/tty2
 ln -s /home/${USERNAME}/.vimrc /mnt/root/.vimrc &> /dev/tty2
 
-progress "Configuring systemd Services" 90
-arch-chroot /mnt /bin/bash -c "systemctl enable ${DESKTOP_DM}" &> /dev/tty2
-arch-chroot /mnt /bin/bash -c "systemctl enable NetworkManager" &> /dev/tty2
-arch-chroot /mnt /bin/bash -c "systemctl enable bluetooth" &> /dev/tty2
-arch-chroot /mnt /bin/bash -c "systemctl enable avahi-daemon" &> /dev/tty2
-arch-chroot /mnt /bin/bash -c "systemctl enable bumblebeed" &> /dev/tty2
+progress "Configure Services..."
+for service in $SYSTEMD; do
+  arch-chroot /mnt /bin/bash -c "systemctl enable ${service}" &> /dev/tty2
+done
 
-ln -s /dev/null /mnt/etc/udev/rules.d/80-net-setup-link.rules &> /dev/tty2
-
-progress "Installing Firstrun Service" 95
+progress "Finalize Installation..."
 cat > /mnt/etc/systemd/system/firstrun.service << EOF
 [Unit]
 Description=Firstrun Service
@@ -415,8 +705,6 @@ EOF
 
 chmod +x /mnt/firstrun.sh &> /dev/tty2
 arch-chroot /mnt /bin/bash -c "systemctl enable firstrun.service" &> /dev/tty2
-
-progress "Syncing Disks" 100
 sync
 
 dialog --title "Installtion" --msgbox "Installation completed. Press Enter to reboot into the new system." 0 0
