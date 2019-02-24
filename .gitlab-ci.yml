@@ -18,8 +18,8 @@ default:
     name: "archlinux-installer"
     paths:
       - archlinux-*.iso
-  #only:
-  #  - JOB_DISABLED
+  only:
+    - JOB_DISABLED
   #tags:
   #  - loop
 
@@ -38,8 +38,8 @@ ssh:
     name: "archlinux-installer-ssh"
     paths:
       - archlinux-*.iso
-  #only:
-  #  - JOB_DISABLED
+  only:
+    - JOB_DISABLED
   #tags:
   #  - loop
 
