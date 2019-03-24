@@ -208,7 +208,7 @@ fi
 
 # ROOTDEV
 ROOTDEV=$(dialog --clear --title "Harddisk" --radiolist "Please select the target device" 0 0 0 \
-$(ls /dev/sd? /dev/mmcblk? /dev/nvme?n? -1 2> /dev/null | while read line; do
+$(ls /dev/sd? /dev/vd? /dev/mmcblk? /dev/nvme?n? -1 2> /dev/null | while read line; do
 echo "$line" "$line" on; done) 3>&1 1>&2 2>&3)
 if test $? -eq 1; then exit 1; fi
 if grep -q "mmcblk" <<< $ROOTDEV || grep -q "nvme" <<< $ROOTDEV; then
