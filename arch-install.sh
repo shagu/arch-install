@@ -23,6 +23,8 @@ PACKAGE_DESKTOP_XFCE="xfce4 xfce4-goodies lightdm-gtk-greeter-settings networkma
 PACKAGE_DESKTOP_XFCE_DM="lightdm"
 PACKAGE_DESKTOP_DEEPIN_APPS="deepin deepin-extra networkmanager"
 PACKAGE_DESKTOP_DEEPIN_DM="lightdm"
+PACKAGE_DESKTOP_HTPC="gnome gnome-extra chrome-gnome-shell networkmanager steam kodi kodi kodi-addons kodi-addons-visualization"
+PACKAGE_DESKTOP_HTPC_DM="gdm"
 PACKAGE_EXT_CONSOLE="zsh unp lxc debootstrap rsnapshot youtube-dl samba android-tools fuseiso"
 PACKAGE_EXT_OPTIMUS="bumblebee lib32-virtualgl nvidia lib32-nvidia-utils primus lib32-primus bbswitch"
 PACKAGE_EXT_FONTS="ttf-liberation ttf-ubuntu-font-family ttf-droid ttf-dejavu ttf-freefont noto-fonts-emoji"
@@ -269,8 +271,9 @@ DESKTOP=$(dialog --clear --title "Desktop Selection" --radiolist "Please select 
   4 "Cinnamon Desktop" off\
   5 "Xfce Desktop" off\
   6 "Deepin Desktop Environment" off\
-  7 "No Desktop" off\
-  8 "Headless (Remote)" off 3>&1 1>&2 2>&3)
+  7 "HTPC (Kodi & GNOME)" off\
+  8 "No Desktop" off\
+  9 "Headless (Remote)" off 3>&1 1>&2 2>&3)
 if test $? -eq 1; then exit 1; fi
 
 case $DESKTOP in
@@ -323,11 +326,19 @@ case $DESKTOP in
     EXT_APPS_QT="on"
   ;;
   "7")
-    DESKTOP="MINIMAL"
+    DESKTOP="HTPC"
+    PACKAGES="$PACKAGES $PACKAGE_DESKTOP $PACKAGE_DESKTOP_GTK $PACKAGE_DESKTOP_HTPC $PACKAGE_DESKTOP_HTPC_DM"
+    SYSTEMD="$SYSTEMD $SYSTEMD_DESKTOP $PACKAGE_DESKTOP_HTPC_DM"
+    UGROUPS="$UGROUPS $PACKAGE_DESKTOP_HTPC_DM"
     EXT_APPS_GTK="off"
     EXT_APPS_QT="off"
   ;;
   "8")
+    DESKTOP="MINIMAL"
+    EXT_APPS_GTK="off"
+    EXT_APPS_QT="off"
+  ;;
+  "9")
     DESKTOP="HEADLESS"
     PACKAGES="dropbear dhcpcd $PACKAGES"
     SYSTEMD="$SYSTEMD sshd dhcpcd@eth0"
@@ -336,15 +347,23 @@ case $DESKTOP in
   ;;
 esac
 
-if [ "$DESKTOP" = "MINIMAL" ] || [ "$DESKTOP" = "HEADLESS" ]; then
+if [ "$DESKTOP" = "MINIMAL" ] || [ "$DESKTOP" = "HEADLESS" ] || [ "$DESKTOP" = "HTPC" ]; then
   HAS_DESKTOP=off
 else
   HAS_DESKTOP=on
 fi
 
+WANT_FONTS=$HAS_DESKTOP
+WANT_CODECS=$HAS_DESKTOP
+
+if [ "$DESKTOP" = "HTPC" ]; then
+  WANT_FONTS=on
+  WANT_CODECS=on
+fi
+
 EXT_PACKAGES=$(dialog --clear --title "Additional Software" --checklist "Select Additional Software" 0 0 0 \
-  EXT_FONTS "Fonts" $HAS_DESKTOP\
-  EXT_CODECS "Codecs" $HAS_DESKTOP\
+  EXT_FONTS "Fonts" $WANT_FONTS\
+  EXT_CODECS "Codecs" $WANT_CODECS\
   EXT_CONSOLE "Console Applications" on\
   EXT_APPS "Desktop Applications" $HAS_DESKTOP\
   EXT_APPS_GAMING "Desktop Gaming Applications" $HAS_DESKTOP\
@@ -687,6 +706,44 @@ arch-chroot /mnt /bin/bash -c "echo \"root:${USERPW}\" | chpasswd" &> /dev/tty2
 ln -s /home/${USERNAME}/.bashrc /mnt/root/.bashrc &> /dev/tty2
 ln -s /home/${USERNAME}/.zshrc /mnt/root/.zshrc &> /dev/tty2
 ln -s /home/${USERNAME}/.vimrc /mnt/root/.vimrc &> /dev/tty2
+
+if [ "$DESKTOP" = "HTPC" ]; then
+  # setting up HTPC user
+  arch-chroot /mnt /bin/bash -c "useradd -m kodi" &> /dev/tty2
+  for group in $UGROUPS; do
+    arch-chroot /mnt /bin/bash -c "gpasswd -a kodi ${group}" &> /dev/tty2
+  done
+  arch-chroot /mnt /bin/bash -c "echo \"kodi:${USERPW}\" | chpasswd" &> /dev/tty2
+
+  # enable auto-login after 3 seconds
+  cat > /mnt/etc/gdm/custom.conf << "EOF"
+[daemon]
+# WaylandEnable=false
+TimedLoginEnable=true
+TimedLogin=kodi
+TimedLoginDelay=3
+
+[security]
+
+[xdmcp]
+
+[chooser]
+
+[debug]
+EOF
+
+  # set default session to kodi
+  cat > /mnt/var/lib/AccountsService/users/kodi << "EOF"
+[User]
+Language=
+XSession=kodi
+EOF
+
+  # allow passwordless login for kodi
+  echo 'auth sufficient pam_succeed_if.so user ingroup nopasswdlogin' >> /mnt/etc/pam.d/gdm-password
+  arch-chroot /mnt /bin/bash -c "groupadd nopasswdlogin" &> /dev/tty2
+  arch-chroot /mnt /bin/bash -c "gpasswd -a kodi nopasswdlogin" &> /dev/tty2
+fi
 
 progress "Configure Services..."
 for service in $SYSTEMD; do
