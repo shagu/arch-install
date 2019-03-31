@@ -224,16 +224,19 @@ else
   PACKAGES="$PACKAGES grub"
 fi
 
-while ! [ "$DISKPW" = "$DISKPW2" ] || [ -z "$DISKPW" ]; do
+DISKPW="..."
+while ! [ "$DISKPW" = "$DISKPW2" ]; do
   DISKPW=$(dialog --clear --title "Disk Encryption" --insecure --passwordbox "Enter your disk encryption password" 0 0 3>&1 1>&2 2>&3)
   if test $? -eq 1; then exit 1; fi
   DISKPW2=$(dialog --clear --title "Disk Encryption" --insecure --passwordbox "Repeat your disk encryption password" 0 0 3>&1 1>&2 2>&3)
   if test $? -eq 1; then exit 1; fi
+
+  echo -n "$DISKPW" > /tmp/DISKPW
 done
 
 # try to unlock previous installation
 progress "Trying to unlock disks..."
-echo -n "${DISKPW}" | cryptsetup luksOpen ${ROOTDEV}${RDAPPEND}2 cryptlvm -d - &> /dev/tty2
+cryptsetup luksOpen ${ROOTDEV}${RDAPPEND}2 cryptlvm -d /tmp/DISKPW &> /dev/tty2
 vgchange -ay &> /dev/tty2
 sleep 2
 
@@ -490,8 +493,8 @@ if [ "$WIPE" = "y" ]; then
   fi
 
   progress "Setting Up ${ROOTDEV}${RDAPPEND}2..."
-  echo -n "${DISKPW}" | cryptsetup -c aes-xts-plain64 -s 512 luksFormat ${ROOTDEV}${RDAPPEND}2 - &> /dev/tty2
-  echo -n "${DISKPW}" | cryptsetup luksOpen ${ROOTDEV}${RDAPPEND}2 cryptlvm -d - &> /dev/tty2
+  cryptsetup -c aes-xts-plain64 -s 512 luksFormat ${ROOTDEV}${RDAPPEND}2 -d /tmp/DISKPW --batch-mode &> /dev/tty2
+  cryptsetup luksOpen ${ROOTDEV}${RDAPPEND}2 cryptlvm -d /tmp/DISKPW &> /dev/tty2
 
   progress "Setting Up ${ROOTDEV}${RDAPPEND}2 (lvm)..."
   pvcreate /dev/mapper/cryptlvm &> /dev/tty2
@@ -521,6 +524,11 @@ mount /dev/mapper/lvm-system /mnt &> /dev/tty2
 
 mkdir /mnt/boot &> /dev/tty2
 mount ${ROOTDEV}${RDAPPEND}1 /mnt/boot &> /dev/tty2
+
+if [ -z "$DISKPW" ]; then
+  cp /tmp/DISKPW /mnt/boot/.key
+  DUMMY_KEY="cryptkey=${ROOTDEV}${RDAPPEND}1:ext4:/.key"
+fi
 
 mkdir /mnt/home &> /dev/tty2
 mount /dev/mapper/lvm-home /mnt/home &> /dev/tty2
@@ -657,9 +665,9 @@ if [ "$UEFI" = "y" ]; then
   echo "linux   /vmlinuz-linux" >> /mnt/boot/loader/entries/arch.conf
   echo "initrd  /intel-ucode.img" >> /mnt/boot/loader/entries/arch.conf
   echo "initrd  /initramfs-linux.img" >> /mnt/boot/loader/entries/arch.conf
-  echo "options root=/dev/mapper/lvm-system rw cryptdevice=${ROOTDEV}${RDAPPEND}2:cryptlvm quiet" >> /mnt/boot/loader/entries/arch.conf
+  echo "options root=/dev/mapper/lvm-system rw cryptdevice=${ROOTDEV}${RDAPPEND}2:cryptlvm $DUMMY_KEY quiet" >> /mnt/boot/loader/entries/arch.conf
 else
-  sed -i "s|GRUB_CMDLINE_LINUX=\"\"|GRUB_CMDLINE_LINUX=\"cryptdevice=${ROOTDEV}${RDAPPEND}2:cryptlvm ${CUSTOM_CMDLINE}\"|" /mnt/etc/default/grub &> /dev/tty2
+  sed -i "s|GRUB_CMDLINE_LINUX=\"\"|GRUB_CMDLINE_LINUX=\"cryptdevice=${ROOTDEV}${RDAPPEND}2:cryptlvm $DUMMY_KEY ${CUSTOM_CMDLINE}\"|" /mnt/etc/default/grub &> /dev/tty2
   sed -i "s/GRUB_TIMEOUT=5/GRUB_TIMEOUT=3/" /mnt/etc/default/grub &> /dev/tty2
   sed -i "s/GRUB_GFXMODE=auto/GRUB_GFXMODE=1920x1080,auto/" /mnt/etc/default/grub &> /dev/tty2
   arch-chroot /mnt /bin/bash -c "grub-install --target=i386-pc ${ROOTDEV}" &> /dev/tty2
