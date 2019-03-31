@@ -634,6 +634,10 @@ EOF
   ;;
 esac
 
+if [ "$DESKTOP" = "GNOME" ]; then
+  ln -s /home/$USERNAME/.config/monitors.xml /mnt/var/lib/gdm/.config/
+fi
+
 if [ "$FIX_MATEBOOK" = "y" ]; then
   mkdir -p /mnt/etc/X11/xorg.conf.d/
   echo "$matebookxorg" > /mnt/etc/X11/xorg.conf.d/20-monitor.conf
