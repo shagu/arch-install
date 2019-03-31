@@ -27,10 +27,10 @@ PACKAGE_EXT_CONSOLE="zsh unp lxc debootstrap rsnapshot youtube-dl samba android-
 PACKAGE_EXT_OPTIMUS="bumblebee lib32-virtualgl nvidia lib32-nvidia-utils primus lib32-primus bbswitch"
 PACKAGE_EXT_FONTS="ttf-liberation ttf-ubuntu-font-family ttf-droid ttf-dejavu ttf-freefont noto-fonts-emoji"
 PACKAGE_EXT_CODECS="gst-plugins-ugly gst-plugins-bad gst-libav ffmpeg"
-PACKAGE_EXT_APPS="mpv atom chromium firefox vlc gimp blender nextcloud-client libreoffice lib32-libpulse pulseaudio-zeroconf picard inkscape audacity pidgin virtualbox-host-modules-arch virtualbox keepassx2"
+PACKAGE_EXT_APPS="mpv atom chromium firefox vlc gimp blender nextcloud-client libreoffice lib32-libpulse pulseaudio-zeroconf picard inkscape audacity pidgin virtualbox-host-modules-arch virtualbox keepassx2 wireshark-qt"
 PACKAGE_EXT_APPS_GAMING="wine wine-mono wine_gecko steam"
-PACKAGE_EXT_APPS_GTK="easytag wireshark-gtk gtk-recordmydesktop openshot gcolor2 meld evolution"
-PACKAGE_EXT_APPS_QT="kid3 wireshark-qt"
+PACKAGE_EXT_APPS_GTK="easytag gtk-recordmydesktop openshot gcolor2 meld evolution"
+PACKAGE_EXT_APPS_QT="kid3"
 
 # external scripts
 sshcrypt_udhcp='#!/bin/sh
