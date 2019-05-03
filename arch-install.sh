@@ -97,6 +97,7 @@ build() {
   add_file "/usr/lib/udev/rules.d/95-dm-notify.rules"
   add_file "/usr/lib/initcpio/udev/11-dm-initramfs.rules" "/usr/lib/udev/rules.d/11-dm-initramfs.rules"
   add_file "/lib/libnss_files.so.2"
+  add_file "/etc/hostname"
 
   add_dir "/var/run"
   add_dir "/var/log"
@@ -133,7 +134,7 @@ run_hook() {
 
       # start udhcpc
       ip link set dev eth0 up
-      udhcpc -p /var/run/udhcpc.pid -s /udhcpc.script
+      udhcpc -p /var/run/udhcpc.pid -s /udhcpc.script -H $(cat /etc/hostname)
 
       # start dropbear
       [ -d /dev/pts ] || mkdir -p /dev/pts
