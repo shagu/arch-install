@@ -46,13 +46,13 @@ pygmentCodeFences = true
 [[menu.main]]
     parent = "download"
     name = "Installer ISO"
-    url = "https://gitlab.com/shagu/arch-install/-/jobs/artifacts/gitlab-ci/raw/archlinux-installer.iso?job=default"
+    url = "https://gitlab.com/shagu/arch-install/-/jobs/artifacts/master/raw/archlinux-installer.iso?job=default"
     weight = 1
 
 [[menu.main]]
     parent = "download"
     name = "Installer SSH ISO"
-    url = "https://gitlab.com/shagu/arch-install/-/jobs/artifacts/gitlab-ci/raw/archlinux-installer-ssh.iso?job=ssh"
+    url = "https://gitlab.com/shagu/arch-install/-/jobs/artifacts/master/raw/archlinux-installer-ssh.iso?job=ssh"
     weight = 2
 
 [[menu.main]]
