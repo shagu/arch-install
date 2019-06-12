@@ -1,29 +1,49 @@
-image: archlinux/base
+stages:
+  - build
+  - deploy
 
-before_script:
-  - pacman -Syu --noconfirm
-  - pacman -S base --noconfirm
-  - pacman -S --noconfirm archiso
+.setup: &setup
+  before_script:
+    # create all loopback devices
+    - mknod /dev/loop0 -m0660 b 7 0
+    - mknod /dev/loop1 -m0660 b 7 1
+    - mknod /dev/loop2 -m0660 b 7 2
+    - mknod /dev/loop3 -m0660 b 7 3
+    - mknod /dev/loop4 -m0660 b 7 4
+    - mknod /dev/loop5 -m0660 b 7 5
+    - mknod /dev/loop6 -m0660 b 7 6
+    - mknod /dev/loop7 -m0660 b 7 7
+    - mknod /dev/loop8 -m0660 b 7 8
+    - mknod /dev/loop9 -m0660 b 7 9
+
+    # install archiso
+    - pacman --noconfirm -Syu
+    - pacman --noconfirm -S base
+    - pacman --noconfirm -S archiso
+
+    # disable mkinitcpio auto detection
+    - sed -i 's/autodetect //' /etc/mkinitcpio.conf
 
 default:
+  stage: build
+  image: archlinux/base:latest
+  <<: *setup
   script:
     - cp -r /usr/share/archiso/configs/releng/ archiso
     - mkdir -p archiso/airootfs/usr/bin archiso/out
     - cp arch-install.sh archiso/airootfs/usr/bin/arch-install
     - cd archiso && ./build.sh -v
-    - mv archiso/out/archlinux-*.iso .
-    - mv archlinux-*.iso $(ls -1 archlinux-*.iso | sed 's/archlinux/archlinux-installer/g')
+    - mv out/archlinux-*.iso ../archlinux-installer.iso
 
   artifacts:
     name: "archlinux-installer"
     paths:
       - archlinux-*.iso
-  only:
-    - JOB_DISABLED
-  #tags:
-  #  - loop
 
 ssh:
+  stage: build
+  image: archlinux/base:latest
+  <<: *setup
   script:
     - cp -r /usr/share/archiso/configs/releng/ archiso
     - echo "sed -i 's/#\(PermitEmptyPasswords \).\+/\1yes/' /etc/ssh/sshd_config" >> archiso/airootfs/root/customize_airootfs.sh
@@ -31,15 +51,31 @@ ssh:
     - mkdir -p archiso/airootfs/usr/bin archiso/out
     - cp arch-install.sh archiso/airootfs/usr/bin/arch-install
     - cd archiso && ./build.sh -v
-    - mv archiso/out/archlinux-*.iso .
-    - mv archlinux-*.iso $(ls -1 archlinux-*.iso | sed 's/archlinux/archlinux-installer-ssh/g')
+    - mv out/archlinux-*.iso ../archlinux-installer-ssh.iso
 
   artifacts:
     name: "archlinux-installer-ssh"
     paths:
       - archlinux-*.iso
-  only:
-    - JOB_DISABLED
-  #tags:
-  #  - loop
 
+pages:
+  stage: deploy
+  image: registry.gitlab.com/pages/hugo:latest
+  variables:
+    GIT_SUBMODULE_STRATEGY: recursive
+
+  script:
+    # install theme
+    - mkdir themes
+    - git submodule add https://github.com/halogenica/beautifulhugo.git themes/beautifulhugo
+
+    # make readme the mainpage
+    - mkdir content
+    - cp README.md content/_index.md
+
+    # render page
+    - hugo
+
+  artifacts:
+    paths:
+    - public
