@@ -26,6 +26,9 @@ stages:
 
 default:
   stage: build
+  only:
+    - triggers
+    - schedules
   image: archlinux/base:latest
   <<: *setup
   script:
@@ -42,6 +45,9 @@ default:
 
 ssh:
   stage: build
+  only:
+    - triggers
+    - schedules
   image: archlinux/base:latest
   <<: *setup
   script:
