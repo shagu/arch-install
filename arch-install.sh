@@ -632,6 +632,25 @@ for package in $PACKAGES; do
   ID=$(expr $ID + 1)
   PERC=$(expr $ID \* 100 / $MAX)
 
+  echo $PERC | dialog --gauge "Validate: '$package'" 7 100 0
+  if arch-chroot /mnt /bin/bash -c "pacman -Sp $package" &> /dev/null; then
+    export PACKAGES_VALID="$PACKAGES_VALID $package"
+  else
+    export PACKAGES_INVALID="$PACKAGES_INVALID $package"
+  fi
+done
+
+if ! [ -z "$PACKAGES_INVALID" ]; then
+  dialog --yes-label "Continue" --no-label "Abort" --clear --title "Warning" --yesno "The following packages can not be installed:\n $PACKAGES_INVALID\n\nPlease report this issue on the bugtracker: https://gitlab.com/shagu/arch-install/issues" 0 0
+  if test $? -eq 1; then exit 1; fi
+fi
+
+ID=0
+MAX=$(echo $PACKAGES_VALID | wc -w)
+for package in $PACKAGES_VALID; do
+  ID=$(expr $ID + 1)
+  PERC=$(expr $ID \* 100 / $MAX)
+
   echo $PERC | dialog --gauge "Install Packages: '$package'" 7 100 0
   arch-chroot /mnt /bin/bash -c "while ! pacman -S --noconfirm --needed $package; do echo repeat...; done" | while read line; do
     echo "$line" &> /dev/tty2
