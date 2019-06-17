@@ -193,8 +193,19 @@ if [ -b /dev/mapper/cryptlvm ]; then
 fi
 
 # KEYMAP
-KEYMAP=$(dialog --clear --title "Keymap" --inputbox "Please enter your keymap" 0 0 "" 3>&1 1>&2 2>&3)
-if test $? -eq 1; then exit 1; fi
+while [ -z $KEYMAP ]; do
+  KEYMAP=$(dialog --menu "Select your keyboard layout:" 0 0 0\
+    de German\
+    fr French\
+    us English\
+    "" Custom 3>&1 1>&2 2>&3)
+  if test $? -eq 1; then exit 1; fi
+
+  if [ -z "$KEYMAP" ]; then
+    KEYMAP=$(dialog --clear --title "Keymap" --inputbox "Please enter your keymap" 0 0 "" 3>&1 1>&2 2>&3)
+  fi
+done
+
 loadkeys $KEYMAP
 
 # WIFI
