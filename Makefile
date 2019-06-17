@@ -10,7 +10,6 @@ default:
 	echo 'if [ "$(tty)" = "/dev/tty1" ]; then arch-install; fi' >> archiso/airootfs/root/.zlogin
 	cd archiso && ./build.sh -v -N arch-install
 	mv archiso/out/*.iso .
-	rm -rf archiso
 
 ssh:
 	cp -r /usr/share/archiso/configs/releng/ archiso
@@ -21,4 +20,3 @@ ssh:
 	echo 'if [ "$(tty)" = "/dev/tty1" ]; then arch-install; fi' >> archiso/airootfs/root/.zlogin
 	cd archiso && ./build.sh -v -N arch-install-ssh
 	mv archiso/out/*.iso .
-	rm -rf archiso

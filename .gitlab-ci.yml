@@ -18,7 +18,7 @@ stages:
 
     # install archiso
     - pacman --noconfirm -Syu
-    - pacman --noconfirm -S base
+    - pacman --noconfirm -S base base-devel
     - pacman --noconfirm -S archiso
 
     # disable mkinitcpio auto detection
@@ -29,12 +29,8 @@ default:
   image: archlinux/base:latest
   <<: *setup
   script:
-    - cp -r /usr/share/archiso/configs/releng/ archiso
-    - mkdir -p archiso/airootfs/usr/bin archiso/out
-    - cp arch-install.sh archiso/airootfs/usr/bin/arch-install
-    - echo 'if [ "$(tty)" = "/dev/tty1" ]; then arch-install; fi' >> archiso/airootfs/root/.zlogin
-    - cd archiso && ./build.sh -v
-    - mv out/archlinux-*.iso ../archlinux-installer.iso
+    - make default
+    - mv *.iso archlinux-installer.iso
 
   artifacts:
     name: "archlinux-installer"
@@ -46,14 +42,8 @@ ssh:
   image: archlinux/base:latest
   <<: *setup
   script:
-    - cp -r /usr/share/archiso/configs/releng/ archiso
-    - echo "sed -i 's/#\(PermitEmptyPasswords \).\+/\1yes/' /etc/ssh/sshd_config" >> archiso/airootfs/root/customize_airootfs.sh
-    - echo "systemctl enable sshd" >> archiso/airootfs/root/customize_airootfs.sh
-    - mkdir -p archiso/airootfs/usr/bin archiso/out
-    - cp arch-install.sh archiso/airootfs/usr/bin/arch-install
-    - echo 'if [ "$(tty)" = "/dev/tty1" ]; then arch-install; fi' >> archiso/airootfs/root/.zlogin
-    - cd archiso && ./build.sh -v
-    - mv out/archlinux-*.iso ../archlinux-installer-ssh.iso
+    - make ssh
+    - mv *.iso archlinux-installer-ssh.iso
 
   artifacts:
     name: "archlinux-installer-ssh"
