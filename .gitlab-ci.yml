@@ -52,7 +52,7 @@ ssh:
 
 pages:
   stage: deploy
-  image: registry.gitlab.com/pages/hugo:latest
+  image: registry.gitlab.com/pages/hugo:0.55.4
   variables:
     GIT_SUBMODULE_STRATEGY: recursive
 
