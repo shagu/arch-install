@@ -32,5 +32,5 @@ First make sure to have `archiso` installed and run the `Makefile`:
 2. Write the iso to an empty USB stick
 3. Boot the USB stick
 4. Connect your network
-5. Download the installer: `wget https://gitlab.com/shagu/arch-install/raw/master/arch-install.sh`
+5. Download the installer: `wget https://raw.githubusercontent.com/shagu/arch-install/master/arch-install.sh`
 6. Run the installer: `./arch-install.sh`
