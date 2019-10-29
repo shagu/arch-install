@@ -13,6 +13,11 @@ script:
       --mount type=bind,source=${PWD},target=/root \
       "arch-install"
 
+before_deploy:
+  - git config --local user.name "Travis Autobuild"
+  - git config --local user.email "travis@example.org"
+  - git tag -f "current"
+
 deploy:
   provider: releases
   api_key: $GITHUB_TOKEN
