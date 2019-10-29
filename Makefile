@@ -7,7 +7,7 @@ default:
 	cp arch-install.sh archiso/airootfs/usr/bin/arch-install
 	echo 'if [ "$$(tty)" = "/dev/tty1" ]; then arch-install; fi' >> archiso/airootfs/root/.zlogin
 	cd archiso && ./build.sh -v -N arch-install
-	mv archiso/out/*.iso .
+	mv archiso/out/*.iso ./arch-install.iso
 
 ssh:
 	rm -rf archiso
@@ -18,4 +18,4 @@ ssh:
 	cp arch-install.sh archiso/airootfs/usr/bin/arch-install
 	echo 'if [ "$$(tty)" = "/dev/tty1" ]; then arch-install; fi' >> archiso/airootfs/root/.zlogin
 	cd archiso && ./build.sh -v -N arch-install-ssh
-	mv archiso/out/*.iso .
+	mv archiso/out/*.iso ./arch-install-ssh.iso
