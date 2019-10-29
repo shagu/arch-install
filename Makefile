@@ -1,9 +1,7 @@
-all: clean default ssh
-
-clean:
-	rm -rf archlinux-*.iso archiso
+all: default ssh
 
 default:
+	rm -rf archiso
 	cp -r /usr/share/archiso/configs/releng/ archiso
 	mkdir -p archiso/airootfs/usr/bin archiso/out
 	cp arch-install.sh archiso/airootfs/usr/bin/arch-install
@@ -12,6 +10,7 @@ default:
 	mv archiso/out/*.iso .
 
 ssh:
+	rm -rf archiso
 	cp -r /usr/share/archiso/configs/releng/ archiso
 	echo "sed -i 's/#\(PermitEmptyPasswords \).\+/\1yes/' /etc/ssh/sshd_config" >> archiso/airootfs/root/customize_airootfs.sh
 	echo "systemctl enable sshd" >> archiso/airootfs/root/customize_airootfs.sh
