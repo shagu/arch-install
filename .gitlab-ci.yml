@@ -21,9 +21,6 @@ stages:
     - pacman --noconfirm -S base base-devel
     - pacman --noconfirm -S archiso
 
-    # disable mkinitcpio auto detection
-    - sed -i 's/autodetect //' /etc/mkinitcpio.conf
-
 default:
   stage: build
   image: archlinux/base:latest
