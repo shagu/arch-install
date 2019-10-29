@@ -1,0 +1,22 @@
+language: generic
+sudo: required
+
+service:
+  - docker
+
+script:
+  - |
+    docker build -t "arch-install" .
+    docker run \
+      --name="arch-installer" \
+      --privileged \
+      --mount type=bind,source=${PWD},target=/root \
+      "arch-install"
+
+deploy:
+  provider: releases
+  api_key: $GITHUB_TOKEN
+  skip_cleanup: true
+  overwrite: true
+  file_glob: true
+  file: "*.iso"
