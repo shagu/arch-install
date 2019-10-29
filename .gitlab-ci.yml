@@ -46,25 +46,3 @@ ssh:
     name: "archlinux-installer-ssh"
     paths:
       - archlinux-*.iso
-
-pages:
-  stage: deploy
-  image: registry.gitlab.com/pages/hugo:0.55.4
-  variables:
-    GIT_SUBMODULE_STRATEGY: recursive
-
-  script:
-    # install theme
-    - mkdir themes
-    - git submodule add https://github.com/halogenica/beautifulhugo.git themes/beautifulhugo
-
-    # make readme the mainpage
-    - mkdir content
-    - cp README.md content/_index.md
-
-    # render page
-    - hugo
-
-  artifacts:
-    paths:
-    - public
