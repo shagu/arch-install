@@ -10,7 +10,7 @@ Nightly builds can be obtained below. Those images are built via `archiso` and a
 *Info: The SSH Image is the same as the regular one, but has SSH without any password enabled by default. This is insecure and should only be used within your local network on headless machines*
 
 ## Preview
-![preview](https://media.giphy.com/media/vvm3RXS2aLyZRHp73s/giphy.gif)
+![preview](preview.gif)
 
 ## Features
 * Supports several desktops
