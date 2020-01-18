@@ -2,12 +2,13 @@
 A simple (re)installer script, focused to make encrypted archlinux installations as easy and fast as possible. The main goal of arch-install is to provide a solution to easilly install and re-install archlinux on a full disk encryption. The entire install procedure is based on `dialog`.
 
 ## Download
-Nightly builds can be obtained below. Those images are built via `archiso` and are patched to include the latest arch-install script.  
+Nightly builds can be obtained below. Those images are built via `archiso` and are patched to include the latest arch-install script.
+The latest travis-ci release builds can be reviewed here: [Build Job](https://travis-ci.org/shagu/arch-install/).
 
-**[↓ Download Installer ISO](https://gitlab.com/shagu/arch-install/-/jobs/artifacts/master/raw/archlinux-installer.iso?job=default)**  
-**[↓ Download SSH ISO](https://gitlab.com/shagu/arch-install/-/jobs/artifacts/master/raw/archlinux-installer-ssh.iso?job=ssh)**
+**[↓ Download Installer ISO](https://github.com/shagu/arch-install/releases/latest/download/arch-install.iso)**
+**[↓ Download Installer ISO (Remote)](https://github.com/shagu/arch-install/releases/latest/download/arch-install-ssh.iso)**
 
-*Info: The SSH Image is the same as the regular one, but has SSH without any password enabled by default. This is insecure and should only be used within your local network on headless machines*
+*Info: The Remote Image is the same as the regular one, but has SSH without any password enabled by default. This is insecure and should only be used within your local network on headless machines*
 
 ## Preview
 ![preview](preview.gif)
