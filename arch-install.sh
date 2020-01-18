@@ -566,7 +566,7 @@ mount /dev/mapper/lvm-home /mnt/home &> /dev/tty2
 
 progress "Install Base System..."
 sed -i "s/#Color/Color/" /etc/pacman.conf &> /dev/tty2
-while ! pacstrap /mnt base &> /dev/tty2; do
+while ! pacstrap /mnt base linux &> /dev/tty2; do
   echo "Failed: repeating" &> /dev/tty2
 done
 
