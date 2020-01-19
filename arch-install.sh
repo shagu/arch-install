@@ -7,7 +7,7 @@ function progress() {
 SYSTEMD=""
 SYSTEMD_DESKTOP="NetworkManager bluetooth avahi-daemon"
 UGROUPS="audio video storage optical network users wheel games rfkill scanner power lp"
-PACKAGES="base-devel cmake linux-headers dosfstools gptfdisk intel-ucode vim openssh git wget htop ncdu screen net-tools unrar unzip p7zip rfkill bind-tools alsa-utils lvm2"
+PACKAGES="base-devel cmake linux-firmware linux-headers dosfstools gptfdisk intel-ucode vim openssh git wget htop ncdu screen net-tools unrar unzip p7zip rfkill bind-tools alsa-utils lvm2"
 PACKAGE_DESKTOP="xorg xorg-drivers xorg-apps xf86-input-evdev xf86-input-synaptics"
 PACKAGE_DESKTOP_GTK="paprefs qt5-styleplugins"
 PACKAGE_DESKTOP_QT="qt5"
