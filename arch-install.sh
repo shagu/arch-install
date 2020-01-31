@@ -641,7 +641,7 @@ for package in $PACKAGES; do
 done
 
 if ! [ -z "$PACKAGES_INVALID" ]; then
-  dialog --yes-label "Continue" --no-label "Abort" --clear --title "Warning" --yesno "The following packages can not be installed:\n $PACKAGES_INVALID\n\nPlease report this issue on the bugtracker: https://gitlab.com/shagu/arch-install/issues" 0 0
+  dialog --yes-label "Continue" --no-label "Abort" --clear --title "Warning" --yesno "The following packages can not be installed:\n $PACKAGES_INVALID\n\nPlease report this issue on the bugtracker: https://github.com/shagu/arch-install/issues" 0 0
   if test $? -eq 1; then exit 1; fi
 fi
 
