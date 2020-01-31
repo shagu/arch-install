@@ -31,7 +31,7 @@ PACKAGE_EXT_FONTS="ttf-liberation ttf-ubuntu-font-family ttf-droid ttf-dejavu gn
 PACKAGE_EXT_CODECS="gst-plugins-ugly gst-plugins-bad gst-libav ffmpeg"
 PACKAGE_EXT_APPS="mpv atom chromium firefox vlc gimp blender nextcloud-client libreoffice lib32-libpulse pulseaudio-zeroconf picard inkscape audacity pidgin virtualbox-host-modules-arch virtualbox keepassxc wireshark-qt"
 PACKAGE_EXT_APPS_GAMING="wine wine-mono wine_gecko steam"
-PACKAGE_EXT_APPS_GTK="easytag gtk-recordmydesktop openshot gcolor2 meld evolution"
+PACKAGE_EXT_APPS_GTK="easytag openshot gcolor2 meld evolution"
 PACKAGE_EXT_APPS_QT="kid3"
 
 # external scripts
