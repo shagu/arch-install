@@ -16,11 +16,12 @@ script:
 before_deploy:
   - git config --local user.name "Travis Autobuild"
   - git config --local user.email "travis@example.org"
-  - git tag -f "$(date +\"%Y-%m-%d\")"
+  - git tag -f nightly
 
 deploy:
   provider: releases
   api_key: $GITHUB_TOKEN
+  name: $(date +"%Y-%m-%d")
   skip_cleanup: true
   overwrite: true
   file_glob: true
