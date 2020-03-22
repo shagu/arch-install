@@ -15,7 +15,7 @@ PACKAGE_DESKTOP_MATE="mate mate-extra lightdm-gtk-greeter-settings networkmanage
 PACKAGE_DESKTOP_MATE_DM="lightdm"
 PACKAGE_DESKTOP_KDE="plasma plasma-wayland-session kde-applications"
 PACKAGE_DESKTOP_KDE_DM="sddm"
-PACKAGE_DESKTOP_GNOME="gnome gnome-extra chrome-gnome-shell flatpak-builder networkmanager rhythmbox"
+PACKAGE_DESKTOP_GNOME="gnome gnome-extra chrome-gnome-shell flatpak-builder networkmanager"
 PACKAGE_DESKTOP_GNOME_DM="gdm"
 PACKAGE_DESKTOP_CINNAMON="networkmanager cinnamon nemo mate-extra lightdm-gtk-greeter-settings blueberry"
 PACKAGE_DESKTOP_CINNAMON_DM="lightdm"
@@ -31,7 +31,7 @@ PACKAGE_EXT_FONTS="ttf-liberation ttf-ubuntu-font-family ttf-droid ttf-dejavu gn
 PACKAGE_EXT_CODECS="gst-plugins-ugly gst-plugins-bad gst-libav ffmpeg"
 PACKAGE_EXT_APPS="mpv atom chromium firefox vlc gimp blender nextcloud-client libreoffice lib32-libpulse pulseaudio-zeroconf picard inkscape audacity pidgin virtualbox-host-modules-arch virtualbox keepassxc wireshark-qt syncthing"
 PACKAGE_EXT_APPS_GAMING="wine wine-mono wine_gecko vkd3d lib32-vkd3d steam"
-PACKAGE_EXT_APPS_GTK="easytag openshot gcolor2 meld evolution"
+PACKAGE_EXT_APPS_GTK="easytag openshot gcolor2 meld evolution quodlibet"
 PACKAGE_EXT_APPS_QT="kid3"
 
 # external scripts
