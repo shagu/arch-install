@@ -692,6 +692,10 @@ esac
 
 if [ "$DESKTOP" = "GNOME" ]; then
   ln -s /home/$USERNAME/.config/monitors.xml /mnt/var/lib/gdm/.config/
+  # When using GDM, another instance of PulseAudio is started, which "captures" your bluetooth device connection.
+  # This can be prevented by masking the pulseaudio socket for the GDM user.
+  mkdir -p /mnt/var/lib/gdm/.config/systemd/user
+  ln -s /dev/null  /mnt/var/lib/gdm/.config/systemd/user/pulseaudio.socket
 fi
 
 if [ "$FIX_MATEBOOK" = "y" ]; then
