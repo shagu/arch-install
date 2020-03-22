@@ -583,8 +583,6 @@ echo LANG=en_US.UTF-8 > /mnt/etc/locale.conf
 
 cat > /mnt/etc/vconsole.conf << EOF
 KEYMAP="$KEYMAP"
-FONT=Lat2-Terminus16
-FONT_MAP=
 EOF
 
 ln -sf /usr/share/zoneinfo/Europe/Berlin /mnt/etc/localtime &> /dev/tty2
