@@ -558,7 +558,7 @@ mount ${ROOTDEV}${RDAPPEND}1 /mnt/boot &> /dev/tty2
 
 if [ -z "$DISKPW" ]; then
   cp /tmp/DISKPW /mnt/boot/.key
-  DUMMY_KEY="cryptkey=${ROOTDEV}${RDAPPEND}1:ext4:/.key"
+  DUMMY_KEY="cryptkey=${ROOTDEV}${RDAPPEND}1:auto:/.key"
 fi
 
 mkdir /mnt/home &> /dev/tty2
