@@ -598,6 +598,10 @@ if [ "$INTEL" = "y" ]; then
   sed -i "s/MODULES=(/MODULES=(i915 /" /mnt/etc/mkinitcpio.conf &> /dev/tty2
 fi
 
+if [ "$UEFI" = "y" ]; then
+  sed -i "s/MODULES=(/MODULES=(vfat /" /mnt/etc/mkinitcpio.conf
+fi
+
 if [ "$NO_HIDPI" = "y" ]; then
   echo "GDK_SCALE=1" >> /mnt/etc/environment
   echo "GDK_DPI_SCALE=1" >> /mnt/etc/environment
