@@ -595,7 +595,7 @@ if [ "$INTEL" = "y" ]; then
   echo "options i915 enable_guc=3" >> /mnt/etc/modprobe.d/i915.conf
   echo "options i915 enable_fbc=1" >> /mnt/etc/modprobe.d/i915.conf
   echo "options i915 fastboot=1" >> /mnt/etc/modprobe.d/i915.conf
-  sed -i "s/MODULES=\"\"/MODULES=\"i915\"/" /mnt/etc/mkinitcpio.conf &> /dev/tty2
+  sed -i "s/MODULES=(/MODULES=(i915 /" /mnt/etc/mkinitcpio.conf &> /dev/tty2
 fi
 
 if [ "$NO_HIDPI" = "y" ]; then
