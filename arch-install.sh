@@ -9,7 +9,7 @@ SYSTEMD_DESKTOP="NetworkManager bluetooth avahi-daemon"
 UGROUPS="audio video storage optical network users wheel games rfkill scanner power lp"
 PACKAGES="base-devel cmake linux-firmware linux-headers dosfstools gptfdisk intel-ucode vim openssh git wget htop ncdu screen net-tools unrar unzip p7zip rfkill bind-tools alsa-utils lvm2"
 PACKAGE_DESKTOP="xorg xorg-drivers xorg-apps xf86-input-evdev xf86-input-synaptics lib32-vulkan-intel vulkan-intel lib32-vulkan-radeon vulkan-radeon xcursor-vanilla-dmz xcursor-vanilla-dmz-aa"
-PACKAGE_DESKTOP_GTK="paprefs qt5-styleplugins materia-gtk-theme papirus-icon-theme"
+PACKAGE_DESKTOP_GTK="paprefs materia-gtk-theme papirus-icon-theme"
 PACKAGE_DESKTOP_QT="qt5"
 PACKAGE_DESKTOP_MATE="mate mate-extra lightdm-gtk-greeter-settings networkmanager pulseaudio network-manager-applet blueman gvfs-smb gvfs-mtp totem gnome-keyring"
 PACKAGE_DESKTOP_MATE_DM="lightdm"
@@ -687,10 +687,6 @@ EOF
   ;;
 "DEEPIN")
   sed -i "s/#greeter-session=.*/greeter-session=lightdm-deepin-greeter/" /mnt/etc/lightdm/lightdm.conf &> /dev/tty2
-  ;;
-*)
-  echo "QT_QPA_PLATFORMTHEME=gtk2" >> /mnt/etc/environment
-  echo "QT_STYLE_OVERRIDE=gtk" >> /mnt/etc/environment
   ;;
 esac
 
