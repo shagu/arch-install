@@ -6,6 +6,8 @@ default:
 	mkdir -p archiso/airootfs/usr/bin archiso/out
 	cp arch-install.sh archiso/airootfs/usr/bin/arch-install
 	echo 'if [ "$$(tty)" = "/dev/tty1" ]; then arch-install; fi' >> archiso/airootfs/root/.zlogin
+	echo 'netctl' >> archiso/packages.x86_64
+	echo 'dialog' >> archiso/packages.x86_64
 	cd archiso && ./build.sh -v -N arch-install
 	mv archiso/out/*.iso ./arch-install.iso
 
@@ -17,5 +19,7 @@ ssh:
 	mkdir -p archiso/airootfs/usr/bin archiso/out
 	cp arch-install.sh archiso/airootfs/usr/bin/arch-install
 	echo 'if [ "$$(tty)" = "/dev/tty1" ]; then arch-install; fi' >> archiso/airootfs/root/.zlogin
+	echo 'netctl' >> archiso/packages.x86_64
+	echo 'dialog' >> archiso/packages.x86_64
 	cd archiso && ./build.sh -v -N arch-install-ssh
 	mv archiso/out/*.iso ./arch-install-ssh.iso
