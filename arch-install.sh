@@ -211,6 +211,7 @@ loadkeys $KEYMAP
 # WIFI
 if iwconfig | grep IEEE &> /dev/null; then
   if dialog --clear --title "WiFi" --yesno "Connect to WiFi?" 0 0 3>&1 1>&2 2>&3; then
+    ip link set wlan0 down
     wifi-menu
   fi
 fi
