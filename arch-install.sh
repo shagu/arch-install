@@ -696,7 +696,8 @@ if [ "$DESKTOP" = "GNOME" ]; then
   # When using GDM, another instance of PulseAudio is started, which "captures" your bluetooth device connection.
   # This can be prevented by masking the pulseaudio socket for the GDM user.
   mkdir -p /mnt/var/lib/gdm/.config/systemd/user
-  ln -s /dev/null  /mnt/var/lib/gdm/.config/systemd/user/pulseaudio.socket
+  ln -s /dev/null /mnt/var/lib/gdm/.config/systemd/user/pulseaudio.socket
+  chown -R 120:120 /mnt/var/lib/gdm
 fi
 
 if [ "$FIX_MATEBOOK" = "y" ]; then
