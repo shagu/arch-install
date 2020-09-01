@@ -8,8 +8,8 @@ default:
 	echo 'if [ "$$(tty)" = "/dev/tty1" ]; then arch-install; fi' >> archiso/airootfs/root/.zlogin
 	echo 'netctl' >> archiso/packages.x86_64
 	echo 'dialog' >> archiso/packages.x86_64
-	cd archiso && ./build.sh -v -N arch-install
-	mv archiso/out/*.iso ./arch-install.iso
+	mkarchiso -v -w /tmp/archiso-work archiso -L "ARINST" -A "arch-install"
+	mv out/*.iso ./arch-install.iso
 
 ssh:
 	rm -rf archiso
@@ -21,5 +21,5 @@ ssh:
 	echo 'if [ "$$(tty)" = "/dev/tty1" ]; then arch-install; fi' >> archiso/airootfs/root/.zlogin
 	echo 'netctl' >> archiso/packages.x86_64
 	echo 'dialog' >> archiso/packages.x86_64
-	cd archiso && ./build.sh -v -N arch-install-ssh
-	mv archiso/out/*.iso ./arch-install-ssh.iso
+	mkarchiso -v -w /tmp/archiso-work-ssh archiso -L "ARINSTSSH" -A "arch-install-ssh"
+	mv out/*.iso ./arch-install-ssh.iso
