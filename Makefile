@@ -6,8 +6,10 @@ default:
 	mkdir -p archiso/airootfs/usr/bin archiso/out
 	cp arch-install.sh archiso/airootfs/usr/bin/arch-install
 	echo 'if [ "$$(tty)" = "/dev/tty1" ]; then arch-install; fi' >> archiso/airootfs/root/.zlogin
-	echo 'netctl' >> archiso/packages.x86_64
 	echo 'dialog' >> archiso/packages.x86_64
+	echo 'networkmanager' >> archiso/packages.x86_64
+	mkdir -p archiso/airootfs/etc/systemd/system/multi-user.target.wants
+	ln -s /usr/lib/systemd/system/NetworkManager.service archiso/airootfs/etc/systemd/system/multi-user.target.wants/NetworkManager.service
 	mkarchiso -v -w /tmp/archiso-work archiso -L "ARINST" -A "arch-install"
 	mv out/*.iso ./arch-install.iso
 
@@ -19,7 +21,9 @@ ssh:
 	mkdir -p archiso/airootfs/usr/bin archiso/out
 	cp arch-install.sh archiso/airootfs/usr/bin/arch-install
 	echo 'if [ "$$(tty)" = "/dev/tty1" ]; then arch-install; fi' >> archiso/airootfs/root/.zlogin
-	echo 'netctl' >> archiso/packages.x86_64
 	echo 'dialog' >> archiso/packages.x86_64
+	echo 'networkmanager' >> archiso/packages.x86_64
+	mkdir -p archiso/airootfs/etc/systemd/system/multi-user.target.wants
+	ln -s /usr/lib/systemd/system/NetworkManager.service archiso/airootfs/etc/systemd/system/multi-user.target.wants/NetworkManager.service
 	mkarchiso -v -w /tmp/archiso-work-ssh archiso -L "ARINSTSSH" -A "arch-install-ssh"
 	mv out/*.iso ./arch-install-ssh.iso
