@@ -180,7 +180,10 @@ Section "Device"
     Driver "modesetting"
 EndSection'
 
+# prepare system for installation
 echo 'screen_color = (CYAN,BLACK,ON)' > ~/.dialogrc
+systemctl stop getty@tty2
+dmesg -D
 
 # clean previous install attempts
 umount -R /mnt &> /dev/null || true
