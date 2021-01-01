@@ -408,6 +408,12 @@ else
   HAS_INTEL=off
 fi
 
+if lspci | grep -i "3d\|video\|vga" | grep -iq 'ati\|amd'; then
+  HAS_RADEON=on
+else
+  HAS_RADEON=off
+fi
+
 if lspci | grep -i "3d\|video\|vga" | grep -iq nvidia; then
   HAS_NVIDIA=on
 else
@@ -427,9 +433,10 @@ else
 fi
 
 TWEAKS=$(dialog --clear --title "Tweaks" --checklist "Select Custom Tweaks" 0 0 0 \
+  RADEON "Setup Radeon Graphics" $HAS_RADEON\
+  INTEL "Setup Intel Graphics" $HAS_INTEL\
+  OPTIMUS "Setup NVIDIA Hybrid Graphics" $HAS_OPTIMUS\
   NO_HIDPI "Disable HiDPI Scaling" on\
-  OPTIMUS "NVIDIA Hybrid Graphics" $HAS_OPTIMUS\
-  INTEL "Latest Intel Graphic Tweaks" $HAS_INTEL\
   FIX_GPD "Hardware: GPD Win" off\
   FIX_MATEBOOK "Hardware: Huawei Matebook X Pro" $MATEBOOK 3>&1 1>&2 2>&3)
 if test $? -eq 1; then exit 1; fi
@@ -596,6 +603,10 @@ if [ "$INTEL" = "y" ]; then
   echo "options i915 enable_fbc=1" >> /mnt/etc/modprobe.d/i915.conf
   echo "options i915 fastboot=1" >> /mnt/etc/modprobe.d/i915.conf
   sed -i "s/MODULES=(/MODULES=(i915 /" /mnt/etc/mkinitcpio.conf &> /dev/tty2
+fi
+
+if [ "$RADEON" = "y" ]; then
+  sed -i "s/MODULES=(/MODULES=(amdgpu /" /mnt/etc/mkinitcpio.conf &> /dev/tty2
 fi
 
 if [ "$UEFI" = "y" ]; then
