@@ -432,12 +432,19 @@ else
   MATEBOOK=off
 fi
 
+if lsmod | grep -iq elan_i2c && dmesg | grep -iq elan0634; then
+  YOGASLIM=on
+else
+  YOGASLIM=off
+fi
+
 TWEAKS=$(dialog --clear --title "Tweaks" --checklist "Select Custom Tweaks" 0 0 0 \
   RADEON "Setup Radeon Graphics" $HAS_RADEON\
   INTEL "Setup Intel Graphics" $HAS_INTEL\
   OPTIMUS "Setup NVIDIA Hybrid Graphics" $HAS_OPTIMUS\
   NO_HIDPI "Disable HiDPI Scaling" on\
   FIX_GPD "Hardware: GPD Win" off\
+  FIX_YOGASLIM "Hardware: Yoga Slim 7" on\
   FIX_MATEBOOK "Hardware: Huawei Matebook X Pro" $MATEBOOK 3>&1 1>&2 2>&3)
 if test $? -eq 1; then exit 1; fi
 
@@ -446,12 +453,16 @@ for item in $TWEAKS; do
     PACKAGES="$PACKAGES $PACKAGE_EXT_OPTIMUS"
     SYSTEMD="$SYSTEMD bumblebeed"
     UGROUPS="$UGROUPS bumblebee"
+  elif [ "$item" = "RADEON" ]; then
+    RADEON=y
   elif [ "$item" = "INTEL" ]; then
     INTEL=y
   elif [ "$item" = "NO_HIDPI" ]; then
     NO_HIDPI=y
   elif [ "$item" == "FIX_GPD" ]; then
     CUSTOM_CMDLINE="$CUSTOM_CMDLINE fbcon=rotate:1 dmi_product_name=GPD-WINI55"
+  elif [ "$item" == "FIX_YOGASLIM" ]; then
+    FIX_YOGASLIM=y
   elif [ "$item" == "FIX_MATEBOOK" ]; then
     FIX_MATEBOOK=y
   fi
@@ -708,6 +719,12 @@ if [ "$DESKTOP" = "GNOME" ]; then
   mkdir -p /mnt/var/lib/gdm/.config/systemd/user
   ln -s /dev/null /mnt/var/lib/gdm/.config/systemd/user/pulseaudio.socket
   chown -R 120:120 /mnt/var/lib/gdm
+fi
+
+if [ "$FIX_YOGASLIM" = "y" ]; then
+  mkdir -p /mnt/etc/modprobe.d/
+  echo "install elan_i2c /bin/true" > /mnt/etc/modprobe.d/touchpad.conf
+  echo "blacklist elan_i2c" >> /mnt/etc/modprobe.d/touchpad.conf
 fi
 
 if [ "$FIX_MATEBOOK" = "y" ]; then
