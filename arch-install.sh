@@ -688,23 +688,10 @@ progress "Configure Desktop..."
 
 case $DESKTOP in
 "KDE")
-  cat > /mnt/etc/sddm.conf << EOF
-[Autologin]
-Relogin=false
-Session=
-User=
-
-[General]
-HaltCommand=
-RebootCommand=
-
-[Theme]
-Current=breeze
-CursorTheme=breeze_cursors
-
-[Users]
-MaximumUid=65000
-MinimumUid=1000
+  mkdir -p /mnt/etc/sddm.conf.d/
+  echo "[Theme]" > /mnt/etc/sddm.conf.d/theme.conf
+  echo "Current=breeze" >> /mnt/etc/sddm.conf.d/theme.conf
+  echo "CursorTheme=breeze_cursors" >> /mnt/etc/sddm.conf.d/theme.conf
 EOF
   ;;
 "DEEPIN")
