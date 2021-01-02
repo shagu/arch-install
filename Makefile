@@ -5,7 +5,7 @@ default:
 	cp -r /usr/share/archiso/configs/releng/ archiso
 	mkdir -p archiso/airootfs/usr/bin archiso/out
 	cp arch-install.sh archiso/airootfs/usr/bin/arch-install
-	chmod +x archiso/airootfs/usr/bin/arch-install
+	sed -i '/^file_permissions=.*/a\ \ ["\/usr\/bin\/arch-install"]="0:0:755"' archiso/profiledef.sh
 	echo 'if [ "$$(tty)" = "/dev/tty1" ]; then arch-install; fi' >> archiso/airootfs/root/.zlogin
 	echo 'dialog' >> archiso/packages.x86_64
 	echo 'networkmanager' >> archiso/packages.x86_64
@@ -21,7 +21,7 @@ ssh:
 	echo "systemctl enable sshd" >> archiso/airootfs/root/customize_airootfs.sh
 	mkdir -p archiso/airootfs/usr/bin archiso/out
 	cp arch-install.sh archiso/airootfs/usr/bin/arch-install
-	chmod +x archiso/airootfs/usr/bin/arch-install
+	sed -i '/^file_permissions=.*/a\ \ ["\/usr\/bin\/arch-install"]="0:0:755"' archiso/profiledef.sh
 	echo 'if [ "$$(tty)" = "/dev/tty1" ]; then arch-install; fi' >> archiso/airootfs/root/.zlogin
 	echo 'dialog' >> archiso/packages.x86_64
 	echo 'networkmanager' >> archiso/packages.x86_64
