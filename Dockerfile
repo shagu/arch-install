@@ -1,4 +1,4 @@
-FROM archlinux/base:latest
+FROM archlinux:latest
 
 RUN mkdir /run/shm && \
   mknod /dev/loop0 -m0660 b 7 0 && \
