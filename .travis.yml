@@ -16,7 +16,8 @@ script:
 before_deploy:
   - git config --local user.name "Travis Autobuild"
   - git config --local user.email "travis@example.org"
-  - git tag -f latest
+  - export TAG=$(date +%Y-%m-%d)
+  - git tag $TAG
 
 deploy:
   provider: releases
