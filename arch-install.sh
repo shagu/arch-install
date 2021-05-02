@@ -25,7 +25,6 @@ PACKAGE_DESKTOP_DEEPIN_APPS="deepin deepin-extra networkmanager"
 PACKAGE_DESKTOP_DEEPIN_DM="lightdm"
 PACKAGE_DESKTOP_HTPC="gnome gnome-extra chrome-gnome-shell networkmanager steam kodi kodi kodi-addons kodi-addons-visualization"
 PACKAGE_DESKTOP_HTPC_DM="gdm"
-PACKAGE_DESKTOP_AWESOME="xorg-xinit awesome alacritty rofi picom nitrogen thunar pavucontrol qutebrowser i3lock"
 PACKAGE_EXT_CONSOLE="zsh unp lxc debootstrap rsnapshot youtube-dl samba android-tools fuseiso"
 PACKAGE_EXT_OPTIMUS="bumblebee lib32-virtualgl nvidia lib32-nvidia-utils primus lib32-primus bbswitch primus_vk lib32-primus_vk"
 PACKAGE_EXT_FONTS="ttf-liberation ttf-ubuntu-font-family ttf-droid ttf-dejavu gnu-free-fonts noto-fonts noto-fonts-emoji"
@@ -287,10 +286,9 @@ DESKTOP=$(dialog --clear --title "Desktop Selection" --radiolist "Please select 
   4 "Cinnamon Desktop" off\
   5 "Xfce Desktop" off\
   6 "Deepin Desktop" off\
-  7 "AwesomeWM Desktop" off\
-  8 "HTPC (Kodi & GNOME)" off\
-  9 "Headless (Remote)" off\
- 10 "Minimal" off 3>&1 1>&2 2>&3)
+  7 "HTPC (Kodi & GNOME)" off\
+  8 "Headless (Remote)" off\
+  9 "Minimal" off 3>&1 1>&2 2>&3)
 if test $? -eq 1; then exit 1; fi
 
 case $DESKTOP in
@@ -343,14 +341,6 @@ case $DESKTOP in
     EXT_APPS_QT="on"
   ;;
   "7")
-    DESKTOP="AWESOME"
-    PACKAGES="$PACKAGES $PACKAGE_DESKTOP $PACKAGE_DESKTOP_GTK $PACKAGE_DESKTOP_AWESOME"
-    SYSTEMD="$SYSTEMD $SYSTEMD_DESKTOP"
-    UGROUPS="$UGROUPS"
-    EXT_APPS_GTK="off"
-    EXT_APPS_QT="off"
-  ;;
-  "8")
     DESKTOP="HTPC"
     PACKAGES="$PACKAGES $PACKAGE_DESKTOP $PACKAGE_DESKTOP_GTK $PACKAGE_DESKTOP_HTPC $PACKAGE_DESKTOP_HTPC_DM"
     SYSTEMD="$SYSTEMD $SYSTEMD_DESKTOP $PACKAGE_DESKTOP_HTPC_DM"
@@ -358,14 +348,14 @@ case $DESKTOP in
     EXT_APPS_GTK="off"
     EXT_APPS_QT="off"
   ;;
-  "9")
+  "8")
     DESKTOP="HEADLESS"
     PACKAGES="dropbear dhcpcd $PACKAGES"
     SYSTEMD="$SYSTEMD sshd dhcpcd@eth0"
     EXT_APPS_GTK="off"
     EXT_APPS_QT="off"
   ;;
-  "10")
+  "9")
     DESKTOP="MINIMAL"
     EXT_APPS_GTK="off"
     EXT_APPS_QT="off"
