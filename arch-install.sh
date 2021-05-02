@@ -632,6 +632,8 @@ if [ "$NO_HIDPI" = "y" ]; then
   echo "GDK_DPI_SCALE=1" >> /mnt/etc/environment
   echo "QT_SCALE_FACTOR=1" >> /mnt/etc/environment
   echo "QT_AUTO_SCREEN_SCALE_FACTOR=0" >> /mnt/etc/environment
+  echo "WINIT_X11_SCALE_FACTOR=1.0" >> /mnt/etc/environment
+  echo "WINIT_HIDPI_FACTOR=1.0" >> /mnt/etc/environment
 fi
 
 if [ "${DESKTOP}" = "HEADLESS" ]; then
