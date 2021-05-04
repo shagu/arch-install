@@ -21,6 +21,7 @@ deploy:
   provider: releases
   api_key: $GITHUB_TOKEN
   name: "Nightly Build: $(date +%Y-%m-%d)"
+  release_notes_file: RELEASE.md
   skip_cleanup: true
   overwrite: true
   file_glob: true
