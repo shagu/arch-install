@@ -7,7 +7,7 @@ function progress() {
 SYSTEMD=""
 SYSTEMD_DESKTOP="NetworkManager bluetooth avahi-daemon"
 UGROUPS="audio video storage optical network users wheel games rfkill scanner power lp"
-PACKAGES="base-devel cmake linux-firmware linux-headers dosfstools gptfdisk intel-ucode vim openssh git wget htop ncdu screen net-tools unrar unzip p7zip rfkill bind-tools alsa-utils jack2 lvm2"
+PACKAGES="base-devel cmake linux-firmware linux-headers dosfstools gptfdisk amd-ucode intel-ucode vim openssh git wget htop ncdu screen net-tools unrar unzip p7zip rfkill bind-tools alsa-utils jack2 lvm2"
 PACKAGE_DESKTOP="xorg xorg-drivers xorg-apps xf86-input-evdev xf86-input-synaptics lib32-vulkan-intel vulkan-intel lib32-vulkan-radeon vulkan-radeon xcursor-vanilla-dmz xcursor-vanilla-dmz-aa"
 PACKAGE_DESKTOP_GTK="paprefs materia-gtk-theme papirus-icon-theme"
 PACKAGE_DESKTOP_QT="qt5"
@@ -736,6 +736,7 @@ if [ "$UEFI" = "y" ]; then
   arch-chroot /mnt /bin/bash -c "bootctl --path=/boot install" &> /dev/tty2
   echo "title   Arch Linux" > /mnt/boot/loader/entries/arch.conf
   echo "linux   /vmlinuz-linux" >> /mnt/boot/loader/entries/arch.conf
+  echo "initrd  /amd-ucode.img" >> /mnt/boot/loader/entries/arch.conf
   echo "initrd  /intel-ucode.img" >> /mnt/boot/loader/entries/arch.conf
   echo "initrd  /initramfs-linux.img" >> /mnt/boot/loader/entries/arch.conf
   echo "options root=/dev/mapper/lvm-system rw cryptdevice=${ROOTDEV}${RDAPPEND}2:cryptlvm $DUMMY_KEY quiet" >> /mnt/boot/loader/entries/arch.conf
