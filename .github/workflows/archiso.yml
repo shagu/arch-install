@@ -1,0 +1,58 @@
+name: Build Nightly Arch Install
+on:
+  push:
+    branches:
+      - master
+  schedule:
+    - cron: '0 2 * * *' # run at 2 AM UTC
+
+jobs:
+  build:
+    name: Build Nightly ISO
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+      - name: Build ISO Images in Docker
+        run: |
+          #docker build -t "arch-install" .
+          #docker run \
+          #  --name="arch-installer" \
+          #  --privileged \
+          #  --mount type=bind,source=${PWD},target=/root \
+          #  "arch-install"
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.date.outputs.date }}
+          release_name: Nightly ${{ steps.date.outputs.date }}
+          draft: false
+          prerelease: false
+      - name: test url
+        run: |
+          echo ${{ steps.create_release.outputs.upload_url }}
+      - name: Upload arch-install-ssh.iso
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: arch-install-ssh.iso
+          asset_name: arch-install-ssh.iso
+          asset_content_type: application/zip
+      - name: Upload arch-install.iso
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: arch-install.iso
+          asset_name: arch-install.iso
+          asset_content_type: application/zip
+
