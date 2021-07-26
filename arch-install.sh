@@ -31,7 +31,7 @@ PACKAGE_EXT_FONTS="ttf-liberation ttf-ubuntu-font-family ttf-droid ttf-dejavu gn
 PACKAGE_EXT_CODECS="gst-plugins-ugly gst-plugins-bad gst-libav ffmpeg"
 PACKAGE_EXT_APPS="mpv audacious atom chromium firefox vlc gimp blender nextcloud-client libreoffice lib32-libpulse pulseaudio-zeroconf picard inkscape audacity pidgin virtualbox-host-modules-arch virtualbox keepassxc wireshark-qt syncthing"
 PACKAGE_EXT_APPS_GAMING="wine wine-mono wine_gecko lib32-openssl lib32-gnutls lib32-mpg123 lib32-libltdl vkd3d lib32-vkd3d lib32-gst-plugins-good lib32-gst-plugins-base lib32-gst-plugins-base-libs steam"
-PACKAGE_EXT_APPS_GTK="easytag openshot gcolor2 meld evolution quodlibet"
+PACKAGE_EXT_APPS_GTK="easytag openshot gcolor2 meld evolution quodlibet celluloid"
 PACKAGE_EXT_APPS_QT="kid3 krita"
 
 # external scripts
