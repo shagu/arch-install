@@ -691,6 +691,14 @@ done
 
 progress "Configure Desktop..."
 
+if [ -f /mnt/etc/speech-dispatcher/speechd.conf ]; then
+  # Remove sound crackle while firefox is open and launched a speech-dispatcher session.
+  # Setting the output method to libao seems to be a workaround:
+  # https://www.reddit.com/r/archlinux/comments/4z2td2/speechdispatcher_makes_all_audio_crackle/
+  # https://bbs.archlinux.org/viewtopic.php?id=215987
+  sed -i 's/# AudioOutputMethod "pulse"/AudioOutputMethod "libao"/g' /mnt/etc/speech-dispatcher/speechd.conf
+fi
+
 case $DESKTOP in
 "KDE")
   mkdir -p /mnt/etc/sddm.conf.d/
