@@ -272,7 +272,7 @@ fi
 if [ "$WIPE" = "y" ]; then
   # close active installation
   progress "Reload disks..."
-  vchange -an lvm &> /dev/tty2
+  vgchange -an lvm &> /dev/tty2
   cryptsetup luksClose cryptlvm &> /dev/tty2
 
   ROOTFS_SIZE=$(dialog --clear --title "Rootfs Size" --inputbox "Please enter the desired size of the root partition" 0 0 "50G" 3>&1 1>&2 2>&3)
