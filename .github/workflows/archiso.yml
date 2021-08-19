@@ -1,14 +1,14 @@
-name: Build Nightly Arch Install
+name: Build Weekly Arch Install
 on:
   push:
     branches:
       - master
   schedule:
-    - cron: '0 2 * * *' # run at 2 AM UTC
+    - cron: '0 0 * * 3' # weekly, wednesday 0:00
 
 jobs:
   build:
-    name: Build Nightly ISO
+    name: Build Weekly ISO
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -31,7 +31,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ steps.date.outputs.date }}
-          release_name: Nightly Build ${{ steps.date.outputs.date }}
+          release_name: Weekly Build ${{ steps.date.outputs.date }}
           draft: false
           prerelease: false
       - name: Upload SSH ISO

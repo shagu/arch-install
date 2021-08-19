@@ -2,7 +2,7 @@
 A simple (re)installer script, focused to make encrypted archlinux installations as easy and fast as possible. The main goal of arch-install is to provide a solution to easilly install and re-install archlinux on a full disk encryption. The entire install procedure is based on `dialog`.
 
 ## Download
-Nightly builds can be obtained below. Those images are built via `archiso` and are patched to include the latest arch-install script.
+Weekly builds can be obtained below. Those images are built via `archiso` and are patched to include the latest arch-install script.
 The latest travis-ci release builds can be reviewed here: [Build Job](https://travis-ci.org/shagu/arch-install/).
 
 * **[↓ Download Installer ISO](https://github.com/shagu/arch-install/releases/latest/download/arch-install.iso)**
