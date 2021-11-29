@@ -44,11 +44,23 @@ BROADCAST="broadcast +"
 
 case "$1" in
   deconfig)
+    ip route flush 0/0 dev $interface
     ip addr flush dev $interface
   ;;
 
   renew|bound)
     ip addr add $ip$NETMASK $BROADCAST dev $interface
+    if [ -n "$router" ]; then
+      ip route flush 0/0 dev $interface
+      metric=0
+      for hop in $router; do
+        if [ "$subnet" = "255.255.255.255" ]; then
+          ip route add $hop dev $interface
+        else
+          ip route add default via $hop dev $interface metric $((metric++))
+        fi
+      done
+    fi
   ;;
 esac'
 
