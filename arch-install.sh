@@ -134,7 +134,7 @@ run_hook() {
 
       # start udhcpc
       ip link set dev eth0 up
-      udhcpc -p /var/run/udhcpc.pid -s /udhcpc.script -H $(cat /etc/hostname)
+      udhcpc -p /var/run/udhcpc.pid -s /udhcpc.script -x hostname:$(cat /etc/hostname)
 
       # start dropbear
       [ -d /dev/pts ] || mkdir -p /dev/pts
