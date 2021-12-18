@@ -571,6 +571,9 @@ else
   mkfs.ext4 -F /dev/mapper/lvm-system -L system &> /dev/tty2
 fi
 
+UUID_BOOT=$(blkid -o value -s UUID ${ROOTDEV}${RDAPPEND}1)
+UUID_CRYPT=$(blkid -o value -s UUID ${ROOTDEV}${RDAPPEND}2)
+
 progress "Mount Partitions..."
 mount /dev/mapper/lvm-system /mnt &> /dev/tty2
 
@@ -579,7 +582,7 @@ mount ${ROOTDEV}${RDAPPEND}1 /mnt/boot &> /dev/tty2
 
 if [ -z "$DISKPW" ]; then
   cp /tmp/DISKPW /mnt/boot/.key
-  DUMMY_KEY="cryptkey=${ROOTDEV}${RDAPPEND}1:auto:/.key"
+  DUMMY_KEY="cryptkey=UUID=${UUID_BOOT}:auto:/.key"
 fi
 
 mkdir /mnt/home &> /dev/tty2
@@ -747,9 +750,9 @@ if [ "$UEFI" = "y" ]; then
   echo "initrd  /amd-ucode.img" >> /mnt/boot/loader/entries/arch.conf
   echo "initrd  /intel-ucode.img" >> /mnt/boot/loader/entries/arch.conf
   echo "initrd  /initramfs-linux.img" >> /mnt/boot/loader/entries/arch.conf
-  echo "options root=/dev/mapper/lvm-system rw cryptdevice=${ROOTDEV}${RDAPPEND}2:cryptlvm $DUMMY_KEY quiet" >> /mnt/boot/loader/entries/arch.conf
+  echo "options root=/dev/mapper/lvm-system rw cryptdevice=UUID=${UUID_CRYPT}:cryptlvm $DUMMY_KEY quiet" >> /mnt/boot/loader/entries/arch.conf
 else
-  sed -i "s|GRUB_CMDLINE_LINUX=\"\"|GRUB_CMDLINE_LINUX=\"cryptdevice=${ROOTDEV}${RDAPPEND}2:cryptlvm $DUMMY_KEY ${CUSTOM_CMDLINE}\"|" /mnt/etc/default/grub &> /dev/tty2
+  sed -i "s|GRUB_CMDLINE_LINUX=\"\"|GRUB_CMDLINE_LINUX=\"cryptdevice=UUID=${UUID_CRYPT}:cryptlvm $DUMMY_KEY ${CUSTOM_CMDLINE}\"|" /mnt/etc/default/grub &> /dev/tty2
   sed -i "s/GRUB_TIMEOUT=5/GRUB_TIMEOUT=3/" /mnt/etc/default/grub &> /dev/tty2
   sed -i "s/GRUB_GFXMODE=auto/GRUB_GFXMODE=1920x1080,auto/" /mnt/etc/default/grub &> /dev/tty2
   arch-chroot /mnt /bin/bash -c "grub-install --target=i386-pc ${ROOTDEV}" &> /dev/tty2
