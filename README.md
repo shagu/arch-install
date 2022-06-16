@@ -8,7 +8,7 @@ The latest travis-ci release builds can be reviewed here: [Build Job](https://tr
 * **[↓ Download Installer ISO](https://github.com/shagu/arch-install/releases/latest/download/arch-install.iso)**
 * **[↓ Download Installer ISO (Remote)](https://github.com/shagu/arch-install/releases/latest/download/arch-install-ssh.iso)**
 
-*Info: The Remote Image is the same as the regular one, but has SSH without any password enabled by default. This is insecure and should only be used within your local network on headless machines*
+*Info: The remote image is the same as the regular one, but has SSH without any password enabled by default. This is insecure and should only be used within your local network on headless machines*
 
 ## Preview
 ![preview](preview.gif)
