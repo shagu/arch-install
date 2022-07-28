@@ -606,6 +606,11 @@ while ! pacstrap /mnt base linux &> /dev/tty2; do
   echo "Failed: repeating" &> /dev/tty2
 done
 
+# WORKAROUND: avoid bug FS#75378 where pacstrap does not
+# unmount /mnt/dev properly under some circumstances:
+# https://bugs.archlinux.org/task/75378
+sleep 10 && sync && umount /mnt/dev
+
 progress "Configure Base System..."
 genfstab -p /mnt > /mnt/etc/fstab
 
