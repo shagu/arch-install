@@ -461,7 +461,7 @@ TWEAKS=$(dialog --clear --title "Tweaks" --checklist "Select Custom Tweaks" 0 0 
   OPTIMUS "Setup NVIDIA Hybrid Graphics" $HAS_OPTIMUS\
   NO_HIDPI "Disable HiDPI Scaling" on\
   FIX_GPD "Hardware: GPD Win" off\
-  FIX_YOGASLIM "Hardware: Yoga Slim 7" on\
+  FIX_YOGASLIM "Hardware: Yoga Slim 7" $YOGASLIM\
   FIX_MATEBOOK "Hardware: Huawei Matebook X Pro" $MATEBOOK 3>&1 1>&2 2>&3)
 if test $? -eq 1; then exit 1; fi
 
