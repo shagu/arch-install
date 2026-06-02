@@ -109,7 +109,6 @@ build() {
   add_file "/usr/lib/udev/rules.d/10-dm.rules"
   add_file "/usr/lib/udev/rules.d/13-dm-disk.rules"
   add_file "/usr/lib/udev/rules.d/95-dm-notify.rules"
-  add_file "/usr/lib/initcpio/udev/11-dm-initramfs.rules" "/usr/lib/udev/rules.d/11-dm-initramfs.rules"
   add_file "/lib/libnss_files.so.2"
   add_file "/etc/hostname"
 
@@ -664,11 +663,15 @@ if [ "${DESKTOP}" = "HEADLESS" ]; then
   echo "$sshcrypt_hook" > /mnt/etc/initcpio/hooks/sshcrypt
   echo "$sshcrypt_udhcp" > /mnt/etc/initcpio/udhcpc.script
   chmod +x /mnt/etc/initcpio/udhcpc.script
-  sed -i "s/block filesystems/block keymap sshcrypt lvm2 filesystems/" /mnt/etc/mkinitcpio.conf &> /dev/tty2
+  sed -i "s/block/block sshcrypt lvm2/" /mnt/etc/mkinitcpio.conf &> /dev/tty2
 else
-  # use default encrypt hook
-  sed -i "s/block filesystems/block keymap encrypt lvm2 filesystems/" /mnt/etc/mkinitcpio.conf &> /dev/tty2
+  # use default encrypt hooks and avoid systemd initramfs
+  sed -i 's/block/block encrypt lvm2/' /mnt/etc/mkinitcpio.conf &> /dev/tty2
 fi
+
+# replace systemd with busybox initram
+sed -i 's/systemd/udev/' /mnt/etc/mkinitcpio.conf &> /dev/tty2
+sed -i 's/sd-vconsole/consolefont/' /mnt/etc/mkinitcpio.conf &> /dev/tty2
 
 ln -s /dev/null /mnt/etc/udev/rules.d/80-net-setup-link.rules &> /dev/tty2
 
