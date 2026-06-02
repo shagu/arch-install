@@ -642,6 +642,7 @@ fi
 
 if [ "$RADEON" = "y" ]; then
   sed -i "s/MODULES=(/MODULES=(amdgpu /" /mnt/etc/mkinitcpio.conf &> /dev/tty2
+  echo "VDPAU_DRIVER=radeonsi" >> /mnt/etc/environment
 fi
 
 if [ "$UEFI" = "y" ]; then
