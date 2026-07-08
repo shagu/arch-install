@@ -1,6 +1,13 @@
 # arch-install
 A simple (re)installer script, focused to make encrypted archlinux installations as easy and fast as possible. The main goal of arch-install is to provide a solution to easilly install and re-install archlinux on a full disk encryption. The entire install procedure is based on `dialog`.
 
+> [!IMPORTANT]
+>
+> **This is not the official [archinstall](https://gitlab.archlinux.org/archlinux/archinstall) project.**
+>
+> It's my personal automated Arch Linux installer that I made when there was no official installer.
+> I have not tried the new official one yet, as mine still does the job for me and I still use it today.
+
 ## Download
 Weekly builds can be obtained below. Those images are built via `archiso` and are patched to include the latest arch-install script.
 The latest travis-ci release builds can be reviewed here: [Build Job](https://travis-ci.org/shagu/arch-install/).
