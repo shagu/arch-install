@@ -726,13 +726,6 @@ if [ -f /mnt/etc/speech-dispatcher/speechd.conf ]; then
 fi
 
 case $DESKTOP in
-"KDE")
-  mkdir -p /mnt/etc/sddm.conf.d/
-  echo "[Theme]" > /mnt/etc/sddm.conf.d/theme.conf
-  echo "Current=breeze" >> /mnt/etc/sddm.conf.d/theme.conf
-  echo "CursorTheme=breeze_cursors" >> /mnt/etc/sddm.conf.d/theme.conf
-EOF
-  ;;
 "DEEPIN")
   sed -i "s/#greeter-session=.*/greeter-session=lightdm-deepin-greeter/" /mnt/etc/lightdm/lightdm.conf &> /dev/tty2
   ;;
