@@ -16,7 +16,7 @@ PACKAGE_DESKTOP_MATE_DM="lightdm"
 PACKAGE_DESKTOP_KDE_GLOBALMENU="libdbusmenu-glib libdbusmenu-gtk2 libdbusmenu-gtk3 libdbusmenu-qt5 lib32-libdbusmenu-glib lib32-libdbusmenu-gtk2 lib32-libdbusmenu-gtk3 appmenu-gtk-module"
 PACKAGE_DESKTOP_KDE_COMPATIBILITY="plasma5-integration kwayland5 breeze5 oxygen5"
 PACKAGE_DESKTOP_KDE="plasma-meta kde-applications-meta packagekit-qt5 kde-gtk-config breeze-gtk kio-fuse flatpak fwupd $PACKAGE_DESKTOP_KDE_GLOBALMENU $PACKAGE_DESKTOP_KDE_COMPATIBILITY"
-PACKAGE_DESKTOP_KDE_DM="sddm"
+PACKAGE_DESKTOP_KDE_DM="plasmalogin"
 PACKAGE_DESKTOP_GNOME="gnome gnome-extra gnome-browser-connector flatpak-builder networkmanager"
 PACKAGE_DESKTOP_GNOME_DM="gdm"
 PACKAGE_DESKTOP_CINNAMON="networkmanager cinnamon nemo mate-extra lightdm-gtk-greeter-settings blueberry"
@@ -315,9 +315,9 @@ case $DESKTOP in
   ;;
   "2")
     DESKTOP="KDE"
-    PACKAGES="$PACKAGES $PACKAGE_DESKTOP $PACKAGE_DESKTOP_QT $PACKAGE_DESKTOP_KDE $PACKAGE_DESKTOP_KDE_DM"
+    PACKAGES="$PACKAGES $PACKAGE_DESKTOP $PACKAGE_DESKTOP_QT $PACKAGE_DESKTOP_KDE"
     SYSTEMD="$SYSTEMD $SYSTEMD_DESKTOP $PACKAGE_DESKTOP_KDE_DM"
-    UGROUPS="$UGROUPS $PACKAGE_DESKTOP_KDE_DM"
+    UGROUPS="$UGROUPS"
     EXT_APPS_GTK="off"
     EXT_APPS_QT="on"
   ;;
